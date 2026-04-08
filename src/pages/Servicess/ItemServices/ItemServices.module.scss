@@ -1,0 +1,43 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 86vh;
+    overflow-y: auto;
+    width: 100%;
+    padding: 20px;
+}
+
+.service-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.service-table th,
+.service-table td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    text-align: left;
+    font-size: 1.3rem;
+}
+
+.service-table th {
+    background-color: #9dbfe0;
+    font-weight: bold;
+}
+
+.service-image {
+    max-width: 68px; /* Giới hạn chiều rộng tối đa */
+    max-height: 68px; /* Giới hạn chiều cao tối đa */
+    object-fit: cover; /* Giữ tỷ lệ và cắt gọn nếu cần */
+    border-radius: 4px; /* Bo góc nhẹ cho thẩm mỹ */
+}
+.edit-icon {
+    color: rgb(39, 129, 92);
+    cursor: pointer;
+}
+
+.delete-icon {
+    color: red;
+    cursor: pointer;
+}

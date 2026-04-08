@@ -1,0 +1,53 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 86vh;
+    overflow-y: auto;
+    width: 100%;
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.vouchers-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.vouchers-table th,
+.vouchers-table td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    text-align: left;
+    vertical-align: middle;
+    font-size: 1.3rem;
+}
+
+.vouchers-table th {
+    background-color: #9dbfe0;
+    font-weight: bold;
+}
+
+/* Thêm lớp cho ô chứa hình ảnh */
+.vouchers-table td.image-cell {
+    width: 150px; /* Chiều rộng cố định cho ô hình ảnh */
+    text-align: center; /* Căn giữa nội dung trong ô */
+}
+
+/* Định dạng hình ảnh */
+.voucher-image {
+    max-width: 80px; /* Giới hạn chiều rộng tối đa */
+    max-height: 80px; /* Giới hạn chiều cao tối đa */
+    object-fit: cover; /* Giữ tỷ lệ và cắt gọn nếu cần */
+    border-radius: 4px; /* Bo góc nhẹ cho thẩm mỹ */
+}
+
+.edit-icon {
+    color: rgb(39, 129, 92);
+    cursor: pointer;
+}
+
+.delete-icon {
+    color: red;
+    cursor: pointer;
+}

@@ -1,0 +1,167 @@
+.wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 20px;
+    background-color: #fff;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    width: 100%;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-family: 'Roboto', sans-serif;
+    margin-bottom: 20px;
+}
+
+.form-content {
+    position: fixed;
+    top: 8%;
+    right: 150px;
+    background: #2c3e50;
+    width: 400px;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    height: 90vh;
+    overflow-y: auto;
+}
+
+h1 {
+    padding-left: 20px;
+    font-size: 24px;
+    color: #2c3e50;
+    margin: 0;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 400x;
+    color: #fff;
+    text-align: left;
+}
+
+input[type='text'],
+input[type='number'],
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+input[type='file'] {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 5px 0px;
+    color: #fff;
+}
+
+.submit {
+    width: 100%;
+    padding: 10px;
+    background-color: #7faddb;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.submit:hover {
+    background-color: #c7daee;
+}
+
+img {
+    display: block;
+    margin-top: 10px;
+    border-radius: 4px;
+}
+
+.form-header {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.close-icon {
+    cursor: pointer;
+    font-size: 20px;
+    color: #555;
+}
+
+.close-icon:hover {
+    color: #fff;
+}
+.open-form-icon {
+    cursor: pointer;
+    font-size: 24px;
+    color: #007bff;
+    padding-right: 30px;
+}
+
+.img-xemtrc {
+    max-width: 100px;
+    max-height: 200px;
+    margin: 10px 0px;
+    color: #fff;
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.search-input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.search-button {
+    font-size: 20px;
+    padding: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: 2c3e50;
+}
+
+.excel-export {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    color: #000;
+
+    input[type='file'] {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    button {
+        margin-bottom: 9px;
+        min-width: 30%;
+        padding: 8px 16px;
+        background-color: #28a745;
+        color: #000;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+
+        &:hover {
+            background-color: #218838;
+        }
+    }
+}

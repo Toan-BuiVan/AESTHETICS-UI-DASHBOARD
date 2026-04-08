@@ -1,0 +1,37 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 35vh;
+    overflow-y: auto;
+    width: 100%;
+    padding: 20px;
+}
+
+.clinic-staff-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.clinic-staff-table th,
+.clinic-staff-table td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    font-size: 1.3rem;
+    text-align: left;
+}
+
+.clinic-staff-table th {
+    background-color: #9dbfe0;
+    font-weight: bold;
+}
+
+.edit-icon {
+    color: rgb(39, 129, 92);
+    cursor: pointer;
+}
+
+.delete-icon {
+    color: red;
+    cursor: pointer;
+}

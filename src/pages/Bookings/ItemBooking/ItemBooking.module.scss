@@ -1,0 +1,36 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 85vh;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.booking-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.booking-table th,
+.booking-table td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    text-align: left;
+    font-size: 1.3rem;
+}
+
+.booking-table th {
+    background-color: #9dbfe0;
+    font-weight: bold;
+}
+
+.edit-icon {
+    color: rgb(39, 129, 92);
+    cursor: pointer;
+}
+
+.delete-icon {
+    color: red;
+    cursor: pointer;
+}
