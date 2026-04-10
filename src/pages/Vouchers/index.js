@@ -1,475 +1,567 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import styles from './Vouchers.module.scss';
 import classNames from 'classnames/bind';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faPlus, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faPlus, faSearch, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import SuccessMessage from '~/components/Layout/Defaultlayout/SuccessMessage';
-import ItemVouchers from './ItemVouchers';
 
 const cx = classNames.bind(styles);
+const API_BASE = 'http://localhost:5122/api';
 
 function Vouchers() {
-    const [description, setDescription] = useState('');
-    const [discountValue, setDiscountValue] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [minimumOrderValue, setMinimumOrderValue] = useState('');
-    const [maxValue, setMaxValue] = useState('');
-    const [rankMember, setRankMember] = useState('');
-    const [ratingPoints, setRatingPoints] = useState('');
-    const [accumulatedPoints, setAccumulatedPoints] = useState('');
-    const [voucherImage, setVoucherImage] = useState(null); // State cho hình ảnh
-    const [imagePreview, setImagePreview] = useState(''); // State cho xem trước hình ảnh
+    // State quản lý danh sách vouchers
+    const [vouchers, setVouchers] = useState([]);
+    const [totalRecordCount, setTotalRecordCount] = useState(0);
+    const [pageIndex, setPageIndex] = useState(1);
+    const [pageSize] = useState(10);
+
+    // State quản lý form
     const [isFormVisible, setIsFormVisible] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editingVoucherId, setEditingVoucherId] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [searchStartDate, setSearchStartDate] = useState('');
-    const [searchEndDate, setSearchEndDate] = useState('');
-    const [vouchersList, setVouchersList] = useState([]);
-    const [loadingVouchers, setLoadingVouchers] = useState(true);
-    const [errorVouchers, setErrorVouchers] = useState(null);
-    const [editingVoucher, setEditingVoucher] = useState(null);
 
-    const refreshTokenOnLoad = async () => {
-        try {
-            const accessToken = localStorage.getItem('token') || '';
-            const refreshToken = localStorage.getItem('refreshToken') || '';
+    // State quản lý form input
+    const [formData, setFormData] = useState({
+        description: '',
+        discountValue: '',
+        startDate: '',
+        endDate: '',
+        minimumOrderValue: '',
+        maxValue: '',
+        rankMember: '',
+        ratingPoints: '',
+        accumulatedPoints: '',
+        usageLimit: '',
+        isActive: true,
+    });
 
-            const response = await fetch('https://buitoandev.somee.com/api/Authentication/Refresh_Token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ accessToken, refreshToken }),
-            });
+    // State tìm kiếm
+    const [searchData, setSearchData] = useState({
+        code: '',
+        rankMember: '',
+        startDate: '',
+        endDate: '',
+    });
 
-            if (!response.ok) throw new Error('Không thể làm mới token');
+    // State checkbox selection
+    const [selectedVouchers, setSelectedVouchers] = useState(new Set());
 
-            const data = await response.json();
-            if (data.responseCode === 1) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('refreshToken', data.refreshToken);
-                console.log('Đã cập nhật token và refreshToken trong localStorage');
-            } else {
-                console.error('Làm mới token thất bại:', data.responseMessage);
-            }
-        } catch (error) {
-            console.error('Lỗi khi làm mới token:', error);
-        }
-    };
-
-    const fetchVouchersList = useCallback(async (searchParams) => {
-        try {
-            setLoadingVouchers(true);
-            const deviceName = localStorage.getItem('deviceName') || '';
-            const refreshToken = localStorage.getItem('refreshToken') || '';
-            const token = localStorage.getItem('token') || '';
-            const userID = localStorage.getItem('userID') || '';
-
-            const headers = {
-                'Content-Type': 'application/json',
-                DeviceName: deviceName,
-                RefreshToken: refreshToken,
-                UserID: userID,
-            };
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-
-            const defaultParams = {
-                voucherID: null,
-                startDate: null,
-                endDate: null,
-                rankMember: null,
-            };
-            const defaultResponse = await fetch('https://buitoandev.somee.com/api/Vouchers/GetList_SearchVouchers', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(defaultParams),
-            });
-            if (!defaultResponse.ok) throw new Error('Lỗi khi gọi API lấy danh sách vouchers mặc định');
-            const data = await defaultResponse.json();
-            let proOf = [];
-            if (Array.isArray(data)) {
-                proOf = data;
-            } else if (data && data.data && Array.isArray(data.data)) {
-                proOf = data.data;
-            }
-            setVouchersList(proOf);
-
-            if (searchParams && Object.values(searchParams).some((value) => value !== null && value !== 0)) {
-                const response = await fetch('https://buitoandev.somee.com/api/Vouchers/GetList_SearchVouchers', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(searchParams),
-                });
-                if (!response.ok) throw new Error('Lỗi khi gọi API lấy danh sách vouchers với tham số');
-                const data = await response.json();
-                let proOf = [];
-                if (Array.isArray(data)) {
-                    proOf = data;
-                } else if (data && data.data && Array.isArray(data.data)) {
-                    proOf = data.data;
-                }
-                setVouchersList(proOf);
-            }
-        } catch (error) {
-            setErrorVouchers(error.message);
-            setVouchersList([]);
-        } finally {
-            setLoadingVouchers(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        const initialize = async () => {
-            // await refreshTokenOnLoad();
-            fetchVouchersList({
-                voucherID: null,
-                startDate: null,
-                endDate: null,
-                rankMember: null,
-            });
-        };
-        initialize();
-    }, [fetchVouchersList]);
-
-    const handleSearch = () => {
-        let searchParams = {
-            voucherID: null,
-            startDate: searchStartDate ? new Date(searchStartDate).toISOString() : null,
-            endDate: searchEndDate ? new Date(searchEndDate).toISOString() : null,
-            rankMember: null,
-        };
-        if (searchTerm) {
-            if (!isNaN(searchTerm)) {
-                searchParams.voucherID = parseInt(searchTerm, 10);
-            } else {
-                searchParams.rankMember = searchTerm;
-            }
-        }
-        fetchVouchersList(searchParams);
-    };
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setVoucherImage(file);
-            const reader = new FileReader();
-            reader.onloadend = () => setImagePreview(reader.result);
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const handleEdit = (voucherID) => {
-        const voucherToEdit = vouchersList.find((voucher) => voucher.voucherID === voucherID);
-        if (voucherToEdit) {
-            setEditingVoucher(voucherToEdit);
-            setDescription(voucherToEdit.description);
-            setDiscountValue(voucherToEdit.discountValue.toString());
-            setStartDate(voucherToEdit.startDate.split('T')[0]);
-            setEndDate(voucherToEdit.endDate.split('T')[0]);
-            setMinimumOrderValue(voucherToEdit.minimumOrderValue.toString());
-            setMaxValue(voucherToEdit.maxValue.toString());
-            setRankMember(voucherToEdit.rankMember);
-            setRatingPoints(voucherToEdit.ratingPoints.toString());
-            setAccumulatedPoints(voucherToEdit.accumulatedPoints.toString());
-            setImagePreview(`https://buitoandev.somee.com/Images/${voucherToEdit.voucherImage}`);
-            setVoucherImage(null); // Reset hình ảnh mới khi chỉnh sửa
-            setIsFormVisible(true);
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const deviceName = localStorage.getItem('deviceName') || '';
-        const refreshToken = localStorage.getItem('refreshToken') || '';
-        const token = localStorage.getItem('token') || '';
-        const userID = localStorage.getItem('userID') || '';
-
-        const headers = {
-            'Content-Type': 'application/json',
-            DeviceName: deviceName,
-            RefreshToken: refreshToken,
-            Authorization: token ? `Bearer ${token}` : '',
-            UserID: userID,
-        };
-
-        const urlToBase64 = async (url) => {
+    // Lấy danh sách vouchers
+    const fetchVouchers = useCallback(
+        async (page = 1, searchParams = {}) => {
             try {
-                const response = await fetch(url);
-                const blob = await response.blob();
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
+                setIsLoading(true);
+                const payload = {
+                    pageNo: page,
+                    pageSize: pageSize,
+                    code: searchParams.code || null,
+                    rankMember: searchParams.rankMember || null,
+                    startDate: searchParams.startDate || null,
+                    endDate: searchParams.endDate || null,
+                };
+
+                const response = await axios.post(`${API_BASE}/Voucher/getvoucherlist`, payload);
+                if (response.data && response.data.baseDatas) {
+                    setVouchers(response.data.baseDatas);
+                    setTotalRecordCount(response.data.totalRecordCount);
+                    setPageIndex(response.data.pageIndex);
+                }
             } catch (error) {
-                console.error('Lỗi khi chuyển URL thành Base64:', error);
-                return '';
+                console.error('Lỗi lấy danh sách vouchers:', error);
+                setSuccessMessage('Lỗi lấy danh sách vouchers');
+                setShowSuccessMessage(true);
+            } finally {
+                setIsLoading(false);
             }
-        };
+        },
+        [pageSize],
+    );
 
-        let voucherImageToSend = '';
-        if (voucherImage) {
-            voucherImageToSend = imagePreview.split(',')[1];
-        } else if (editingVoucher) {
-            const imageUrl = `https://buitoandev.somee.com/Images/${editingVoucher.voucherImage}`;
-            voucherImageToSend = await urlToBase64(imageUrl);
+    // Khởi tạo dữ liệu
+    useEffect(() => {
+        fetchVouchers(1);
+    }, [fetchVouchers]);
+
+    // Auto-hide success message after 3 seconds
+    useEffect(() => {
+        if (showSuccessMessage) {
+            const timer = setTimeout(() => {
+                setShowSuccessMessage(false);
+            }, 3000);
+            return () => clearTimeout(timer);
         }
+    }, [showSuccessMessage]);
 
-        const formData = {
-            voucherID: editingVoucher?.voucherID,
-            description,
-            discountValue: parseFloat(discountValue),
-            startDate: new Date(startDate).toISOString(),
-            endDate: new Date(endDate).toISOString(),
-            minimumOrderValue: parseFloat(minimumOrderValue),
-            maxValue: parseFloat(maxValue),
-            rankMember,
-            ratingPoints: parseInt(ratingPoints, 10),
-            accumulatedPoints: parseInt(accumulatedPoints, 10),
-            voucherImage: voucherImageToSend,
-        };
+    // Xử lý thay đổi input form
+    const handleFormChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value,
+        }));
+    };
+
+    // Xử lý thay đổi input tìm kiếm
+    const handleSearchChange = (e) => {
+        const { name, value } = e.target;
+        setSearchData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    // Tìm kiếm
+    const handleSearch = () => {
+        setPageIndex(1);
+        fetchVouchers(1, searchData);
+    };
+
+    // Mở form thêm voucher
+    const handleAddVoucher = () => {
+        setIsEditMode(false);
+        setEditingVoucherId(null);
+        setFormData({
+            description: '',
+            discountValue: '',
+            startDate: '',
+            endDate: '',
+            minimumOrderValue: '',
+            maxValue: '',
+            rankMember: '',
+            ratingPoints: '',
+            accumulatedPoints: '',
+            usageLimit: '',
+            isActive: true,
+        });
+        setIsFormVisible(true);
+    };
+
+    // Mở form sửa voucher
+    const handleEditVoucher = (voucher) => {
+        setIsEditMode(true);
+        setEditingVoucherId(voucher.id);
+        setFormData({
+            description: voucher.description || '',
+            discountValue: voucher.discountValue || '',
+            startDate: voucher.startDate ? voucher.startDate.split('T')[0] : '',
+            endDate: voucher.endDate ? voucher.endDate.split('T')[0] : '',
+            minimumOrderValue: voucher.minimumOrderValue || '',
+            maxValue: voucher.maxValue || '',
+            rankMember: voucher.rankMember || '',
+            ratingPoints: voucher.ratingPoints || '',
+            accumulatedPoints: voucher.accumulatedPoints || '',
+            usageLimit: voucher.usageLimit || '',
+            isActive: voucher.isActive || true,
+        });
+        setIsFormVisible(true);
+    };
+
+    // Gửi form (Thêm hoặc Sửa)
+    const handleSubmitForm = async (e) => {
+        e.preventDefault();
+
+        if (!formData.description || !formData.discountValue) {
+            setSuccessMessage('Vui lòng nhập đủ thông tin bắt buộc');
+            setShowSuccessMessage(true);
+            return;
+        }
 
         try {
-            const response = await fetch(
-                editingVoucher
-                    ? 'https://buitoandev.somee.com/api/Vouchers/Update_Vouchers'
-                    : 'https://buitoandev.somee.com/api/Vouchers/Insert_Vouchers',
-                {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(formData),
-                },
-            );
+            setIsLoading(true);
+            let payload = { ...formData };
 
-            const result = await response.json();
-            if (!response.ok) {
-                setSuccessMessage(result.resposeMessage || 'Thao tác thất bại!');
+            // Chuyển đổi kiểu dữ liệu
+            payload.discountValue = parseFloat(payload.discountValue) || 0;
+            payload.minimumOrderValue = parseFloat(payload.minimumOrderValue) || 0;
+            payload.maxValue = parseFloat(payload.maxValue) || 0;
+            payload.ratingPoints = parseInt(payload.ratingPoints) || 0;
+            payload.accumulatedPoints = parseInt(payload.accumulatedPoints) || 0;
+            payload.usageLimit = parseInt(payload.usageLimit) || 0;
+
+            if (isEditMode) {
+                payload.id = editingVoucherId;
+                await axios.post(`${API_BASE}/Voucher/updatevoucher`, payload);
             } else {
-                setSuccessMessage(result.resposeMessage || 'Thao tác thành công!');
-                const newAccessToken = response.headers.get('New-AccessToken');
-                const newRefreshToken = response.headers.get('New-RefreshToken');
-                if (newAccessToken) localStorage.setItem('token', newAccessToken);
-                if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
-
-                if (editingVoucher) {
-                    setVouchersList(
-                        vouchersList.map((voucher) =>
-                            voucher.voucherID === editingVoucher.voucherID ? { ...voucher, ...formData } : voucher,
-                        ),
-                    );
-                } else {
-                    fetchVouchersList({
-                        voucherID: 0,
-                        startDate: null,
-                        endDate: null,
-                        rankMember: null,
-                    });
-                }
-
-                setDescription('');
-                setDiscountValue('');
-                setStartDate('');
-                setEndDate('');
-                setMinimumOrderValue('');
-                setMaxValue('');
-                setRankMember('');
-                setRatingPoints('');
-                setAccumulatedPoints('');
-                setVoucherImage(null);
-                setImagePreview('');
-                setEditingVoucher(null);
-
-                setTimeout(() => {
-                    setIsFormVisible(false);
-                    setSuccessMessage('');
-                }, 3500);
+                await axios.post(`${API_BASE}/Voucher/createvoucher`, payload);
             }
+
+            setSuccessMessage(isEditMode ? 'Cập nhật voucher thành công!' : 'Thêm voucher thành công!');
+            setShowSuccessMessage(true);
+            setIsFormVisible(false);
+            fetchVouchers(pageIndex, searchData);
         } catch (error) {
-            setSuccessMessage('Có lỗi xảy ra: ' + error.message);
+            console.error('Lỗi:', error);
+            setSuccessMessage(error.response?.data?.message || 'Có lỗi xảy ra');
+            setShowSuccessMessage(true);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleDeleteSuccess = (message) => {
-        setSuccessMessage(message);
-        setTimeout(() => setSuccessMessage(''), 3000);
+    // Toggle select checkbox
+    const handleSelectVoucher = (voucherId) => {
+        const newSelected = new Set(selectedVouchers);
+        if (newSelected.has(voucherId)) {
+            newSelected.delete(voucherId);
+        } else {
+            newSelected.add(voucherId);
+        }
+        setSelectedVouchers(newSelected);
     };
 
-    const handleDelete = (voucherID) => {
-        setVouchersList(vouchersList.filter((voucher) => voucher.voucherID !== voucherID));
-    };
-
-    const toggleFormVisibility = () => {
-        setIsFormVisible(!isFormVisible);
-        if (isFormVisible) {
-            setEditingVoucher(null);
-            setDescription('');
-            setDiscountValue('');
-            setStartDate('');
-            setEndDate('');
-            setMinimumOrderValue('');
-            setMaxValue('');
-            setRankMember('');
-            setRatingPoints('');
-            setAccumulatedPoints('');
-            setVoucherImage(null);
-            setImagePreview('');
+    // Select all checkbox
+    const handleSelectAll = () => {
+        if (selectedVouchers.size === vouchers.length) {
+            setSelectedVouchers(new Set());
+        } else {
+            setSelectedVouchers(new Set(vouchers.map((v) => v.id)));
         }
     };
+
+    // Xóa nhiều voucher
+    const handleDeleteMultiple = async () => {
+        if (selectedVouchers.size === 0) {
+            setSuccessMessage('Vui lòng chọn ít nhất một voucher để xóa');
+            setShowSuccessMessage(true);
+            return;
+        }
+
+        if (selectedVouchers.size > 1) {
+            setSuccessMessage('Chỉ có thể xóa 1 voucher tại một lần');
+            setShowSuccessMessage(true);
+            return;
+        }
+
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedVouchers.size} voucher đã chọn?`)) {
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            const deletePromises = Array.from(selectedVouchers).map((id) =>
+                axios.post(`${API_BASE}/Voucher/deletevoucher`, { id }),
+            );
+            await Promise.all(deletePromises);
+            setSuccessMessage(`Xóa ${selectedVouchers.size} voucher thành công!`);
+            setShowSuccessMessage(true);
+            setSelectedVouchers(new Set());
+            fetchVouchers(pageIndex, searchData);
+        } catch (error) {
+            console.error('Lỗi xóa voucher:', error);
+            setSuccessMessage('Lỗi xóa voucher');
+            setShowSuccessMessage(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Tính số trang
+    const totalPages = Math.ceil(totalRecordCount / pageSize);
 
     return (
         <div className={cx('wrapper')}>
-            {successMessage && <SuccessMessage message={successMessage} />}
+            {showSuccessMessage && <SuccessMessage message={successMessage} />}
+
+            {/* Header */}
             <div className={cx('header')}>
-                <h1>Vouchers</h1>
-                <div className={cx('search-container')}>
-                    <input
-                        type="text"
-                        placeholder="Tìm kiếm vouchers..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className={cx('search-input')}
-                    />
-                    <input
-                        type="date"
-                        value={searchStartDate}
-                        onChange={(e) => setSearchStartDate(e.target.value)}
-                        placeholder="Ngày bắt đầu"
-                        className={cx('search-input')}
-                    />
-                    <input
-                        type="date"
-                        value={searchEndDate}
-                        onChange={(e) => setSearchEndDate(e.target.value)}
-                        placeholder="Ngày kết thúc"
-                        className={cx('search-input')}
-                    />
-                    <button onClick={handleSearch} className={cx('search-button')}>
-                        <FontAwesomeIcon icon={faSearch} />
+                <h1>Quản Lý Vouchers</h1>
+                <div className={cx('header-actions')}>
+                    {selectedVouchers.size > 0 && (
+                        <button
+                            className={cx('btn-delete-multiple', { disabled: selectedVouchers.size > 1 })}
+                            onClick={handleDeleteMultiple}
+                            disabled={selectedVouchers.size > 1}
+                            title={
+                                selectedVouchers.size > 1
+                                    ? 'Chỉ có thể xóa 1 voucher tại một lần'
+                                    : 'Xóa voucher được chọn'
+                            }
+                        >
+                            <FontAwesomeIcon icon={faTrash} />
+                            Xóa ({selectedVouchers.size})
+                        </button>
+                    )}
+                    <button className={cx('btn-primary')} onClick={handleAddVoucher}>
+                        <FontAwesomeIcon icon={faPlus} />
+                        Thêm Voucher
                     </button>
                 </div>
-                {!isFormVisible && (
-                    <div className={cx('open-form-icon')} onClick={toggleFormVisibility}>
-                        <FontAwesomeIcon icon={faPlus} />
-                    </div>
+            </div>
+
+            {/* Search */}
+            <div className={cx('search-section')}>
+                <input
+                    type="text"
+                    name="code"
+                    placeholder="Tìm kiếm mã voucher..."
+                    value={searchData.code}
+                    onChange={handleSearchChange}
+                    className={cx('search-input')}
+                />
+                <input
+                    type="text"
+                    name="rankMember"
+                    placeholder="Hạng thành viên..."
+                    value={searchData.rankMember}
+                    onChange={handleSearchChange}
+                    className={cx('search-input')}
+                />
+                <input
+                    type="date"
+                    name="startDate"
+                    value={searchData.startDate}
+                    onChange={handleSearchChange}
+                    className={cx('search-input')}
+                />
+                <input
+                    type="date"
+                    name="endDate"
+                    value={searchData.endDate}
+                    onChange={handleSearchChange}
+                    className={cx('search-input')}
+                />
+                <button className={cx('btn-search')} onClick={handleSearch}>
+                    <FontAwesomeIcon icon={faSearch} />
+                    Tìm Kiếm
+                </button>
+            </div>
+
+            {/* Vouchers Table */}
+            <div className={cx('table-container')}>
+                {isLoading ? (
+                    <div className={cx('loading')}>Đang tải...</div>
+                ) : vouchers.length > 0 ? (
+                    <table className={cx('vouchers-table')}>
+                        <thead>
+                            <tr>
+                                <th className={cx('checkbox-cell')}>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedVouchers.size === vouchers.length && vouchers.length > 0}
+                                        onChange={handleSelectAll}
+                                        title="Chọn tất cả"
+                                    />
+                                </th>
+                                <th>Mã Voucher</th>
+                                <th>Mô Tả</th>
+                                <th>Giảm Giá (%)</th>
+                                <th>Ngày Bắt Đầu</th>
+                                <th>Ngày Kết Thúc</th>
+                                <th>Hạng Thành Viên</th>
+                                <th>Giới Hạn Dùng</th>
+                                <th>Trạng Thái</th>
+                                <th>Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {vouchers.map((voucher) => (
+                                <tr key={voucher.id} className={cx({ selected: selectedVouchers.has(voucher.id) })}>
+                                    <td className={cx('checkbox-cell')}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedVouchers.has(voucher.id)}
+                                            onChange={() => handleSelectVoucher(voucher.id)}
+                                        />
+                                    </td>
+                                    <td className={cx('code')}>{voucher.code}</td>
+                                    <td>{voucher.description}</td>
+                                    <td>{voucher.discountValue}%</td>
+                                    <td>{new Date(voucher.startDate).toLocaleDateString('vi-VN')}</td>
+                                    <td>{new Date(voucher.endDate).toLocaleDateString('vi-VN')}</td>
+                                    <td>{voucher.rankMember || 'N/A'}</td>
+                                    <td>{voucher.usageLimit}</td>
+                                    <td>
+                                        <span className={cx('badge', voucher.isActive ? 'active' : 'inactive')}>
+                                            {voucher.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                                        </span>
+                                    </td>
+                                    <td className={cx('action-buttons')}>
+                                        <button
+                                            className={cx('btn-icon-edit')}
+                                            onClick={() => handleEditVoucher(voucher)}
+                                            title="Sửa"
+                                        >
+                                            <FontAwesomeIcon icon={faEdit} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                ) : (
+                    <div className={cx('empty-state')}>Không có voucher nào</div>
                 )}
             </div>
-            {isFormVisible && (
-                <form className={cx('form-content')} onSubmit={handleSubmit}>
-                    <div className={cx('form-header')}>
-                        <FontAwesomeIcon icon={faTimes} className={cx('close-icon')} onClick={toggleFormVisibility} />
-                    </div>
-                    <div>
-                        <label htmlFor="description">Mô tả:</label>
-                        <input
-                            type="text"
-                            id="description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="discountValue">Giảm giá (%):</label>
-                        <input
-                            type="number"
-                            id="discountValue"
-                            value={discountValue}
-                            onChange={(e) => setDiscountValue(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="startDate">Ngày bắt đầu:</label>
-                        <input
-                            type="date"
-                            id="startDate"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="endDate">Ngày kết thúc:</label>
-                        <input
-                            type="date"
-                            id="endDate"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="minimumOrderValue">Giá trị đơn tối thiểu (VND):</label>
-                        <input
-                            type="number"
-                            id="minimumOrderValue"
-                            value={minimumOrderValue}
-                            onChange={(e) => setMinimumOrderValue(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="maxValue">Giá trị tối đa (VND):</label>
-                        <input
-                            type="number"
-                            id="maxValue"
-                            value={maxValue}
-                            onChange={(e) => setMaxValue(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="rankMember">Hạng thành viên:</label>
-                        <input
-                            type="text"
-                            id="rankMember"
-                            value={rankMember}
-                            onChange={(e) => setRankMember(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="ratingPoints">Điểm đánh giá:</label>
-                        <input
-                            type="number"
-                            id="ratingPoints"
-                            value={ratingPoints}
-                            onChange={(e) => setRatingPoints(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="accumulatedPoints">Điểm tích lũy:</label>
-                        <input
-                            type="number"
-                            id="accumulatedPoints"
-                            value={accumulatedPoints}
-                            onChange={(e) => setAccumulatedPoints(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className={cx('image-upload')}>
-                        <label htmlFor="voucherImage">Hình ảnh voucher:</label>
-                        <input type="file" id="voucherImage" accept="image/*" onChange={handleImageChange} />
-                        {imagePreview && <img className={cx('img-xemtrc')} src={imagePreview} alt="Xem trước" />}
-                    </div>
-                    <button className={cx('submit')} type="submit">
-                        {editingVoucher ? 'Cập nhật' : 'Thêm'}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className={cx('pagination')}>
+                    <button disabled={pageIndex === 1} onClick={() => fetchVouchers(pageIndex - 1, searchData)}>
+                        Trang Trước
                     </button>
-                </form>
+                    <span>
+                        Trang {pageIndex} / {totalPages}
+                    </span>
+                    <button
+                        disabled={pageIndex === totalPages}
+                        onClick={() => fetchVouchers(pageIndex + 1, searchData)}
+                    >
+                        Trang Sau
+                    </button>
+                </div>
             )}
 
-            {loadingVouchers ? (
-                <div>Đang tải danh sách...</div>
-            ) : errorVouchers ? (
-                <div>Lỗi: {errorVouchers}</div>
-            ) : (
-                <ItemVouchers
-                    vouchers={vouchersList}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onDeleteSuccess={handleDeleteSuccess}
-                />
+            {/* Modal Form */}
+            {isFormVisible && (
+                <div className={cx('modal-overlay')}>
+                    <div className={cx('modal-content')}>
+                        <div className={cx('modal-header')}>
+                            <h2>{isEditMode ? 'Cập Nhật Voucher' : 'Thêm Voucher'}</h2>
+                            <button className={cx('btn-close')} onClick={() => setIsFormVisible(false)}>
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                        </div>
+
+                        <form className={cx('form')} onSubmit={handleSubmitForm}>
+                            <div className={cx('form-group')}>
+                                <label>
+                                    Mô Tả <span className={cx('required')}>*</span>
+                                </label>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleFormChange}
+                                    placeholder="Nhập mô tả voucher"
+                                    rows="3"
+                                    required
+                                />
+                            </div>
+
+                            <div className={cx('form-row')}>
+                                <div className={cx('form-group')}>
+                                    <label>
+                                        Giảm Giá (%) <span className={cx('required')}>*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="discountValue"
+                                        value={formData.discountValue}
+                                        onChange={handleFormChange}
+                                        placeholder="0"
+                                        required
+                                    />
+                                </div>
+
+                                <div className={cx('form-group')}>
+                                    <label>Giá Trị Đơn Tối Thiểu (₫)</label>
+                                    <input
+                                        type="number"
+                                        name="minimumOrderValue"
+                                        value={formData.minimumOrderValue}
+                                        onChange={handleFormChange}
+                                        placeholder="0"
+                                    />
+                                </div>
+
+                                <div className={cx('form-group')}>
+                                    <label>Giá Trị Giảm Tối Đa (₫)</label>
+                                    <input
+                                        type="number"
+                                        name="maxValue"
+                                        value={formData.maxValue}
+                                        onChange={handleFormChange}
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={cx('form-row')}>
+                                <div className={cx('form-group')}>
+                                    <label>Ngày Bắt Đầu</label>
+                                    <input
+                                        type="date"
+                                        name="startDate"
+                                        value={formData.startDate}
+                                        onChange={handleFormChange}
+                                    />
+                                </div>
+
+                                <div className={cx('form-group')}>
+                                    <label>Ngày Kết Thúc</label>
+                                    <input
+                                        type="date"
+                                        name="endDate"
+                                        value={formData.endDate}
+                                        onChange={handleFormChange}
+                                    />
+                                </div>
+
+                                <div className={cx('form-group')}>
+                                    <label>Hạng Thành Viên</label>
+                                    <input
+                                        type="text"
+                                        name="rankMember"
+                                        value={formData.rankMember}
+                                        onChange={handleFormChange}
+                                        placeholder="Bronze, Silver, Gold..."
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={cx('form-row')}>
+                                <div className={cx('form-group')}>
+                                    <label>Điểm Đánh Giá</label>
+                                    <input
+                                        type="number"
+                                        name="ratingPoints"
+                                        value={formData.ratingPoints}
+                                        onChange={handleFormChange}
+                                        placeholder="0"
+                                    />
+                                </div>
+
+                                <div className={cx('form-group')}>
+                                    <label>Điểm Tích Luỹ</label>
+                                    <input
+                                        type="number"
+                                        name="accumulatedPoints"
+                                        value={formData.accumulatedPoints}
+                                        onChange={handleFormChange}
+                                        placeholder="0"
+                                    />
+                                </div>
+
+                                <div className={cx('form-group')}>
+                                    <label>Giới Hạn Dùng</label>
+                                    <input
+                                        type="number"
+                                        name="usageLimit"
+                                        value={formData.usageLimit}
+                                        onChange={handleFormChange}
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={cx('form-actions')}>
+                                <button
+                                    type="button"
+                                    className={cx('btn-cancel')}
+                                    onClick={() => setIsFormVisible(false)}
+                                >
+                                    Hủy
+                                </button>
+                                <button type="submit" className={cx('btn-submit')} disabled={isLoading}>
+                                    {isLoading ? 'Đang xử lý...' : 'Lưu'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
     );

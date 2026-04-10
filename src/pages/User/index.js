@@ -27,7 +27,6 @@ function User() {
     const [loadingUsers, setLoadingUsers] = useState(true);
     const [errorUsers, setErrorUsers] = useState(null);
     const [editingUser, setEditingUser] = useState(null);
-    const [activeTab, setActiveTab] = useState('info');
     const [typePersons, setTypePersons] = useState([]);
     const [showRoleList, setShowRoleList] = useState(false);
     const [permissionData, setPermissionData] = useState([]);
@@ -84,46 +83,6 @@ function User() {
             setDisplayUserID('');
         }
     };
-
-    const fetchUsersList = useCallback(async (searchParams) => {
-        try {
-            setLoadingUsers(true);
-            const deviceName = localStorage.getItem('deviceName') || '';
-            const refreshToken = localStorage.getItem('refreshToken') || '';
-            const token = localStorage.getItem('token') || '';
-            const userID = localStorage.getItem('userID') || '';
-
-            const headers = {
-                'Content-Type': 'application/json',
-                DeviceName: deviceName,
-                RefreshToken: refreshToken,
-                UserID: userID,
-            };
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-
-            const response = await fetch('https://buitoandev.somee.com/api/Users/GetList_SearchUser', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(searchParams),
-            });
-
-            if (!response.ok) throw new Error('Lỗi khi gọi API lấy danh sách người dùng');
-
-            const data = await response.json();
-            let proOf = [];
-            if (Array.isArray(data)) {
-                proOf = data;
-            } else if (data && data.data && Array.isArray(data.data)) {
-                proOf = data.data;
-            }
-            setUsersList(proOf);
-        } catch (error) {
-            setErrorUsers(error.message);
-            setUsersList([]);
-        } finally {
-            setLoadingUsers(false);
-        }
-    }, []);
 
     // Fetch full permissions from GroupByPermission
     const fetchGroupByPermission = useCallback(async (body = {}) => {
@@ -239,18 +198,15 @@ function User() {
     useEffect(() => {
         if (hasFetched.current) return;
         hasFetched.current = true;
-        const initialize = async () => {
-            fetchUsersList({ userID: null });
-        };
-        initialize();
-    }, [fetchUsersList]);
+        setUsersList([]);
+    }, []);
 
     useEffect(() => {
-        if (activeTab === 'permission' && editingUser) {
+        if (editingUser) {
             if (typePersons.length === 0) fetchTypePersons();
             loadPermissions();
         }
-    }, [activeTab, typePersons.length, editingUser, fetchTypePersons, loadPermissions]);
+    }, [typePersons.length, editingUser, fetchTypePersons, loadPermissions]);
 
     const handleSearch = () => {
         let searchParams = { userID: null };
@@ -266,7 +222,8 @@ function User() {
                 return;
             }
         }
-        fetchUsersList(searchParams);
+        // API đã được xóa - fetchUsersList không còn sử dụng
+        setUsersList([]);
     };
 
     const handleEdit = (userID) => {
@@ -286,7 +243,6 @@ function User() {
             setTypePerson(userToEdit.typePerson || '');
             setOriginalTypePerson(userToEdit.typePerson || '');
             setPassword('');
-            setActiveTab('info');
             setIsFormVisible(true);
         }
     };
@@ -376,7 +332,8 @@ function User() {
                         usersList.map((user) => (user.userID === editingUser.userID ? { ...user, ...formData } : user)),
                     );
                 } else {
-                    fetchUsersList({ userID: null });
+                    // API đã được xóa
+                    setUsersList([]);
                 }
 
                 setUserName('');
@@ -424,7 +381,6 @@ function User() {
             setPhone('');
             setAddres('');
             setIdCard('');
-            setActiveTab('info');
         }
     };
 
@@ -636,258 +592,97 @@ function User() {
                     )}
                     {editingUser && (
                         <>
-                            <div className={cx('tabs')}>
-                                <button
-                                    type="button"
-                                    className={cx('tab-button', { active: activeTab === 'info' })}
-                                    onClick={() => setActiveTab('info')}
-                                >
-                                    Thông tin
+                            <div className={cx('info-section')}>
+                                <h3>Thông tin người dùng</h3>
+                                <div>
+                                    <label htmlFor="userID">Mã người dùng:</label>
+                                    <input type="text" id="userID" value={editingUser.userID} disabled />
+                                </div>
+                                <div>
+                                    <label htmlFor="userName">Tên người dùng:</label>
+                                    <input
+                                        type="text"
+                                        id="userName"
+                                        value={userName}
+                                        onChange={(e) => setUserName(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="email">Email:</label>
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="dateBirth">Ngày sinh:</label>
+                                    <input
+                                        type="date"
+                                        id="dateBirth"
+                                        value={dateBirth}
+                                        onChange={(e) => setDateBirth(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="sex">Giới tính:</label>
+                                    <input type="text" id="sex" value={sex} onChange={(e) => setSex(e.target.value)} />
+                                </div>
+                                <div>
+                                    <label htmlFor="phone">Số điện thoại:</label>
+                                    <input
+                                        type="text"
+                                        id="phone"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="addres">Địa chỉ:</label>
+                                    <input
+                                        type="text"
+                                        id="addres"
+                                        value={addres}
+                                        onChange={(e) => setAddres(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="idCard">CMND/CCCD:</label>
+                                    <input
+                                        type="text"
+                                        id="idCard"
+                                        value={idCard}
+                                        onChange={(e) => setIdCard(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="referralCode">Mã giới thiệu:</label>
+                                    <input
+                                        type="text"
+                                        id="referralCode"
+                                        value={referralCode}
+                                        onChange={(e) => setReferralCode(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="typePerson">Loại người dùng:</label>
+                                    <select
+                                        id="typePerson"
+                                        value={typePerson}
+                                        onChange={(e) => setTypePerson(e.target.value)}
+                                        disabled
+                                    >
+                                        <option value="">Chọn loại người dùng</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Doctor">Doctor</option>
+                                        <option value="Employee">Employee</option>
+                                        <option value="Customer">Customer</option>
+                                    </select>
+                                </div>
+                                <button className={cx('submit')} type="submit">
+                                    Cập nhật
                                 </button>
-                                <button
-                                    type="button"
-                                    className={cx('tab-button', { active: activeTab === 'permission' })}
-                                    onClick={() => setActiveTab('permission')}
-                                >
-                                    Phân quyền
-                                </button>
-                            </div>
-                            <div className={cx('tab-content')}>
-                                {activeTab === 'info' && (
-                                    <div className={cx('info-section')}>
-                                        <h3>Thông tin người dùng</h3>
-                                        <div>
-                                            <label htmlFor="userID">Mã người dùng:</label>
-                                            <input type="text" id="userID" value={editingUser.userID} disabled />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="userName">Tên người dùng:</label>
-                                            <input
-                                                type="text"
-                                                id="userName"
-                                                value={userName}
-                                                onChange={(e) => setUserName(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="email">Email:</label>
-                                            <input
-                                                type="email"
-                                                id="email"
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="dateBirth">Ngày sinh:</label>
-                                            <input
-                                                type="date"
-                                                id="dateBirth"
-                                                value={dateBirth}
-                                                onChange={(e) => setDateBirth(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="sex">Giới tính:</label>
-                                            <input
-                                                type="text"
-                                                id="sex"
-                                                value={sex}
-                                                onChange={(e) => setSex(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="phone">Số điện thoại:</label>
-                                            <input
-                                                type="text"
-                                                id="phone"
-                                                value={phone}
-                                                onChange={(e) => setPhone(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="addres">Địa chỉ:</label>
-                                            <input
-                                                type="text"
-                                                id="addres"
-                                                value={addres}
-                                                onChange={(e) => setAddres(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="idCard">CMND/CCCD:</label>
-                                            <input
-                                                type="text"
-                                                id="idCard"
-                                                value={idCard}
-                                                onChange={(e) => setIdCard(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="referralCode">Mã giới thiệu:</label>
-                                            <input
-                                                type="text"
-                                                id="referralCode"
-                                                value={referralCode}
-                                                onChange={(e) => setReferralCode(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="typePerson">Loại người dùng:</label>
-                                            <select
-                                                id="typePerson"
-                                                value={typePerson}
-                                                onChange={(e) => setTypePerson(e.target.value)}
-                                                disabled
-                                            >
-                                                <option value="">Chọn loại người dùng</option>
-                                                <option value="Admin">Admin</option>
-                                                <option value="Doctor">Doctor</option>
-                                                <option value="Employee">Employee</option>
-                                                <option value="Customer">Customer</option>
-                                            </select>
-                                        </div>
-                                        <button className={cx('submit')} type="submit">
-                                            Cập nhật
-                                        </button>
-                                    </div>
-                                )}
-
-                                {activeTab === 'permission' && (
-                                    <div className={cx('menu-tab')}>
-                                        <div className={cx('permission-section')}>
-                                            <div
-                                                className={cx('tab-permisstion')}
-                                                style={{ cursor: 'pointer', color: '#fff' }}
-                                                onClick={() => setActiveTab('info')}
-                                            >
-                                                Mã Người Dùng: {displayUserID} - Tên Người Dùng: {displayUserName}{' '}
-                                                <div className={cx('menu-title')} onClick={(e) => e.stopPropagation()}>
-                                                    {typePersons.length > 0
-                                                        ? (() => {
-                                                              const matchedTypes = typePersons.filter(
-                                                                  (tp) => tp === editingUser.typePerson,
-                                                              );
-                                                              if (matchedTypes.length > 0) {
-                                                                  return `Vai trò: ${matchedTypes.join(', ')}`;
-                                                              } else {
-                                                                  return `Vai trò: ${editingUser.typePerson} (Không trùng trong list)`;
-                                                              }
-                                                          })()
-                                                        : 'Đang tải vai trò...'}
-                                                    {showRoleList && (
-                                                        <div className={cx('role-dropdown', { visible: showRoleList })}>
-                                                            <ul>
-                                                                {typePersons.map((tp) => (
-                                                                    <li
-                                                                        key={tp}
-                                                                        onClick={() => handleSelectRole(tp)}
-                                                                        className={cx({
-                                                                            selected: tp === typePerson,
-                                                                        })}
-                                                                    >
-                                                                        {tp}
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div
-                                                    className={cx('menu-actions')}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <FontAwesomeIcon
-                                                        icon={faPenAlt}
-                                                        className={cx('action-icon')}
-                                                        onClick={() => setShowRoleList(!showRoleList)}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className={cx('permission-menu')}>
-                                            {loadingPermissions ? (
-                                                <div>Đang tải dữ liệu phân quyền...</div>
-                                            ) : errorPermissions ? (
-                                                <div>Lỗi: {errorPermissions}</div>
-                                            ) : (
-                                                <>
-                                                    {permissionData.map((group, groupIndex) => (
-                                                        <div key={groupIndex} className={cx('permission-group')}>
-                                                            <div className={cx('group-header')}>
-                                                                <label
-                                                                    className={cx('radio-label')}
-                                                                    htmlFor={`group_${groupIndex}`}
-                                                                >
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        id={`group_${groupIndex}`}
-                                                                        checked={
-                                                                            groupCheckboxStates[groupIndex] || false
-                                                                        }
-                                                                        onChange={() => toggleGroupCheckbox(groupIndex)}
-                                                                    />
-                                                                    <span className={cx('radio-checkmark')}></span>
-                                                                    <h4 onClick={() => toggleGroup(groupIndex)}>
-                                                                        {group.function}
-                                                                    </h4>
-                                                                </label>
-                                                                <span onClick={() => toggleGroup(groupIndex)}>
-                                                                    {expandedGroups[groupIndex] ? '-' : '+'}
-                                                                </span>
-                                                            </div>
-                                                            {expandedGroups[groupIndex] && (
-                                                                <ul className={cx('endpoint-list', 'radio-group')}>
-                                                                    {group.listFuncitons.map(
-                                                                        (endpoint, endpointIndex) => {
-                                                                            const key = `${groupIndex}_${endpointIndex}`;
-                                                                            const isChecked = checkboxStates[key];
-                                                                            return (
-                                                                                <li key={endpointIndex}>
-                                                                                    <label
-                                                                                        className={cx('radio-label')}
-                                                                                        htmlFor={key}
-                                                                                    >
-                                                                                        <input
-                                                                                            type="checkbox"
-                                                                                            id={key}
-                                                                                            checked={isChecked}
-                                                                                            onChange={() =>
-                                                                                                toggleEndpointCheckbox(
-                                                                                                    groupIndex,
-                                                                                                    endpointIndex,
-                                                                                                )
-                                                                                            }
-                                                                                        />
-                                                                                        <span
-                                                                                            className={cx(
-                                                                                                'radio-checkmark',
-                                                                                            )}
-                                                                                        ></span>
-                                                                                        {endpoint.funcitonID}:{' '}
-                                                                                        {endpoint.funcionName}
-                                                                                    </label>
-                                                                                </li>
-                                                                            );
-                                                                        },
-                                                                    )}
-                                                                </ul>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                    <button
-                                                        className={cx('submit')}
-                                                        type="button"
-                                                        onClick={handleUpdatePermissions}
-                                                        style={{ marginTop: '20px', width: '100%' }}
-                                                    >
-                                                        Cập nhật
-                                                    </button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </>
                     )}

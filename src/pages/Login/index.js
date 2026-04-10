@@ -3,6 +3,7 @@ import classNames from 'classnames/bind';
 import { useEffect, useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faEnvelope, faLock, faCode, faUserPlus } from '@fortawesome/free-solid-svg-icons';
+import { jwtDecode } from 'jwt-decode';
 import SuccessMessage from '~/components/Layout/Defaultlayout/SuccessMessage';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,6 +18,7 @@ function Login() {
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [error, setError] = useState(null);
     const [isVisible, setIsVisible] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const wrapperRef = useRef(null);
     const loginTitleRef = useRef(null);
     const registerTitleRef = useRef(null);
@@ -64,33 +66,71 @@ function Login() {
         const userName = document.getElementById('log-email').value;
         const password = document.getElementById('log-pass').value;
 
+        if (!userName || !password) {
+            setSuccessMessage('Vui lòng nhập đầy đủ tên tài khoản và mật khẩu.');
+            setShowSuccessMessage(true);
+            return;
+        }
+
+        setIsLoading(true);
+
         try {
-            const response = await axios.post('https://buitoandev.somee.com/api/Authentication/Login_Account', {
+            const response = await axios.post('http://localhost:5122/api/Authentication/login', {
                 userName,
                 password,
             });
             const data = response.data;
             console.log('Phản hồi từ API:', data);
-            if (data.responseCode === 1) {
-                const message = data.responseMessage || 'Đăng nhập thành công!';
-                setSuccessMessage(message);
+
+            // Kiểm tra nếu token tồn tại và không phải null
+            if (data.token && data.token !== null) {
+                // Decode token để lấy thông tin user
+                const decodedToken = jwtDecode(data.token);
+                console.log('Decoded Token:', decodedToken);
+
+                // setSuccessMessage('Đăng nhập thành công!');
                 setShowSuccessMessage(true);
+
+                // Lưu token và refreshToken
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('refreshToken', data.refreshToken);
-                localStorage.setItem('userID', data.userID);
-                localStorage.setItem('deviceName', data.deviceName);
-                localStorage.setItem('typePerson', data.typePerson);
-                localStorage.setItem('userName', data.userName);
+
+                // Lấy thông tin từ token
+                const userName = decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
+                const userID = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/primarysid'];
+                const role = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+                const staffId = decodedToken['StaffId'];
+
+                localStorage.setItem('userID', userID || '');
+                localStorage.setItem('userName', userName || '');
+                localStorage.setItem('role', role || '');
+                localStorage.setItem('staffId', staffId || '');
+                localStorage.setItem('isAuthenticated', 'true');
+
                 window.dispatchEvent(new Event('storageChange'));
-                navigate('/services');
+
+                setTimeout(() => {
+                    navigate('/services');
+                }, 1500);
             } else {
-                const message = data.responseMessage || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
-                setSuccessMessage(message);
+                // Token là null - Đăng nhập thất bại
+                setSuccessMessage('Tên tài khoản hoặc mật khẩu không chính xác.');
                 setShowSuccessMessage(true);
+                setIsLoading(false);
             }
         } catch (err) {
-            setError('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
             console.error('Lỗi đăng nhập:', err);
+            let errorMessage = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+
+            if (err.response?.data?.token === null && err.response?.data?.refreshToken === null) {
+                errorMessage = 'Tên tài khoản hoặc mật khẩu không chính xác.';
+            } else if (err.message === 'Network Error') {
+                errorMessage = 'Lỗi kết nối. Vui lòng kiểm tra kết nối internet.';
+            }
+
+            setSuccessMessage(errorMessage);
+            setShowSuccessMessage(true);
+            setIsLoading(false);
         }
     };
 
@@ -197,9 +237,13 @@ function Login() {
                             </div>
                         </div>
                         <div className={cx('input-box')}>
-                            <button type="submit" className={cx('btn-submit')} id="SignInBtn">
-                                Đăng Nhập
-                                <FontAwesomeIcon className={cx('bx', 'bx-log-in')} icon={faUserPlus}></FontAwesomeIcon>
+                            <button type="submit" className={cx('btn-submit')} id="SignInBtn" disabled={isLoading}>
+                                {isLoading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
+                                <FontAwesomeIcon
+                                    className={cx('bx', 'bx-log-in', { loading: isLoading })}
+                                    icon={faUserPlus}
+                                    style={{ opacity: isLoading ? 0.6 : 1 }}
+                                ></FontAwesomeIcon>
                             </button>
                         </div>
                         <div className={cx('switch-form')}>

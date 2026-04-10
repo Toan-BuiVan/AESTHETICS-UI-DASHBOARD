@@ -1,556 +1,633 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import styles from './Products.module.scss';
 import classNames from 'classnames/bind';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faPlus, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faPlus, faSearch, faEdit, faTrash, faDownload } from '@fortawesome/free-solid-svg-icons';
 import SuccessMessage from '~/components/Layout/Defaultlayout/SuccessMessage';
-import ItemProduct from './ItemProduct';
+import useDebounce from '~/hooks/useDebounce';
 
 const cx = classNames.bind(styles);
-// Hook này dùng để lấy danh sách loại dịch vụ từ API và quản lý trạng thái liên quan.
-const useServices = () => {
-    // **useState**: Lưu trữ danh sách loại dịch vụ từ API (mảng các object).
-    const [services, setServices] = useState([]);
-    // **useState**: Quản lý trạng thái tải dữ liệu (true = đang tải, false = hoàn tất).
-    const [loading, setLoading] = useState(true);
-    // **useState**: Lưu trữ thông báo lỗi khi gọi API (null nếu không có lỗi).
-    const [error, setError] = useState(null);
+const API_BASE = 'http://localhost:5122/api';
 
-    // **Hàm `refreshTokenOnLoad`**: Làm mới token khi trang được tải để đảm bảo quyền truy cập API.
-    const refreshTokenOnLoad = async () => {
+function Products() {
+    // State quản lý danh sách sản phẩm
+    const [products, setProducts] = useState([]);
+    const [totalRecordCount, setTotalRecordCount] = useState(0);
+    const [pageIndex, setPageIndex] = useState(1);
+    const [pageSize] = useState(10);
+
+    // State quản lý form
+    const [isFormVisible, setIsFormVisible] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editingProductId, setEditingProductId] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+
+    // State quản lý dropdown
+    const [suppliers, setSuppliers] = useState([]);
+
+    // State quản lý form input
+    const [formData, setFormData] = useState({
+        supplierId: '',
+        productName: '',
+        description: '',
+        sellingPrice: '',
+        quantity: '',
+        unit: '',
+        minimumStock: '',
+        productImages: '',
+        costPrice: '',
+    });
+
+    // State quản lý hình ảnh upload
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState('');
+
+    // State tìm kiếm
+    const [searchData, setSearchData] = useState({
+        productName: '',
+        supplierId: '',
+    });
+
+    // State quản lý checkbox selection
+    const [selectedProducts, setSelectedProducts] = useState(new Set());
+
+    // Lấy danh sách nhà cung cấp
+    const fetchSuppliers = useCallback(async () => {
         try {
-            const accessToken = localStorage.getItem('token') || '';
-            const refreshToken = localStorage.getItem('refreshToken') || '';
-
-            const response = await fetch('https://buitoandev.somee.com/api/Authentication/Refresh_Token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ accessToken, refreshToken }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Không thể làm mới token');
-            }
-
-            const data = await response.json();
-
-            if (data.responseCode === 1) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('refreshToken', data.refreshToken);
-                console.log('Đã cập nhật token và refreshToken trong localStorage');
-            } else {
-                console.error('Làm mới token thất bại:', data.resposeMessage);
+            const response = await axios.post(`${API_BASE}/Supplier/paging`, {});
+            if (response.data && response.data.baseDatas) {
+                setSuppliers(response.data.baseDatas);
             }
         } catch (error) {
-            console.error('Lỗi khi làm mới token:', error);
+            console.error('Lỗi lấy nhà cung cấp:', error);
         }
+    }, []);
+
+    // Lấy danh sách sản phẩm
+    const fetchProducts = useCallback(
+        async (page = 1, searchParams = {}) => {
+            try {
+                setIsLoading(true);
+                const payload = {
+                    pageNo: page,
+                    pageSize: pageSize,
+                    productName: searchParams.productName || '',
+                    supplierId: searchParams.supplierId ? parseInt(searchParams.supplierId) : null,
+                };
+
+                const response = await axios.post(`${API_BASE}/Product/getproductlist`, payload);
+                if (response.data && response.data.baseDatas) {
+                    setProducts(response.data.baseDatas);
+                    setTotalRecordCount(response.data.totalRecordCount);
+                    setPageIndex(response.data.pageIndex);
+                }
+            } catch (error) {
+                console.error('Lỗi lấy danh sách sản phẩm:', error);
+                setSuccessMessage('Lỗi lấy danh sách sản phẩm');
+                setShowSuccessMessage(true);
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [pageSize],
+    );
+
+    // Khởi tạo dữ liệu
+    useEffect(() => {
+        fetchSuppliers();
+        fetchProducts(1);
+    }, [fetchSuppliers, fetchProducts]);
+
+    // Auto-hide success message after 3 seconds
+    useEffect(() => {
+        if (showSuccessMessage) {
+            const timer = setTimeout(() => {
+                setShowSuccessMessage(false);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [showSuccessMessage]);
+
+    // Debounce search data with 3 second delay
+    const debouncedSearchData = useDebounce(searchData, 3000);
+
+    // Call API when debounced search data changes
+    useEffect(() => {
+        setPageIndex(1);
+        fetchProducts(1, debouncedSearchData);
+    }, [debouncedSearchData, fetchProducts]);
+
+    // Xử lý thay đổi input form
+    const handleFormChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
     };
 
-    // **Hàm `fetchServices`**: Lấy danh sách loại dịch vụ từ API và cập nhật state.
-    const fetchServices = useCallback(async () => {
-        try {
-            setLoading(true);
-            const deviceName = localStorage.getItem('deviceName') || '';
-            const refreshToken = localStorage.getItem('refreshToken') || '';
-            const token = localStorage.getItem('token') || '';
-            const userID = localStorage.getItem('userID') || '';
-
-            const headers = {
-                'Content-Type': 'application/json',
-                DeviceName: deviceName,
-                RefreshToken: refreshToken,
-                UserID: userID,
-            };
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            const servicesResponse = await fetch(
-                'https://buitoandev.somee.com/api/TypeProductsServices/GetList_SreachProductsOfServices',
-                {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({
-                        productsOfServicesID: null,
-                        productsOfServicesName: null,
-                        productsOfServicesType: 'Servicess',
-                    }),
-                },
-            );
-
-            const newAccessToken = servicesResponse.headers.get('New-AccessToken');
-            const newRefreshToken = servicesResponse.headers.get('New-RefreshToken');
-
-            if (newAccessToken) {
-                localStorage.setItem('token', newAccessToken);
-            }
-            if (newRefreshToken) {
-                localStorage.setItem('refreshToken', newRefreshToken);
-            }
-
-            if (!servicesResponse.ok) {
-                throw new Error('Lỗi khi gọi API');
-            }
-
-            const data = await servicesResponse.json();
-            let proOf = [];
-            if (Array.isArray(data)) {
-                proOf = data;
-            } else if (data && data.data && Array.isArray(data.data)) {
-                proOf = data.data;
-            }
-            setServices(proOf);
-        } catch (error) {
-            setError(error.message);
-            setServices([]);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    // **useEffect**: Gọi làm mới token và lấy dữ liệu khi component mount.
-    useEffect(() => {
-        // refreshTokenOnLoad();
-        fetchServices();
-    }, [fetchServices]);
-
-    return { services, loading, error };
-};
-
-function Servicess() {
-    // **useState**: Lưu trữ ID của loại sản phẩm/dịch vụ liên quan (lấy từ select).
-    const [productsOfServicesID, setProductsOfServicesID] = useState('');
-    // **useState**: Lưu trữ tên dịch vụ nhập từ form.
-    const [serviceName, setServiceName] = useState('');
-    // **useState**: Lưu trữ mô tả dịch vụ nhập từ textarea.
-    const [description, setDescription] = useState('');
-    // **useState**: Lưu trữ giá dịch vụ (chuỗi, chuyển sang số khi gửi API).
-    const [priceService, setPriceService] = useState('');
-    // **useState**: Lưu trữ file hình ảnh dịch vụ (File object hoặc null).
-    const [serviceImage, setServiceImage] = useState(null);
-    // **useState**: Lưu trữ URL tạm thời để hiển thị hình ảnh xem trước.
-    const [imagePreview, setImagePreview] = useState('');
-    // **useState**: Quản lý trạng thái hiển thị form (true = hiển thị, false = ẩn).
-    const [isFormVisible, setIsFormVisible] = useState(false);
-    // **useState**: Lưu trữ thông báo thành công hoặc lỗi để hiển thị.
-    const [successMessage, setSuccessMessage] = useState('');
-    // **useState**: Lưu trữ từ khóa tìm kiếm dịch vụ từ input.
-    const [searchTerm, setSearchTerm] = useState('');
-    // **useState**: Lưu trữ danh sách dịch vụ từ API (mảng các object).
-    const [servicesList, setServicesList] = useState([]);
-    // **useState**: Quản lý trạng thái tải danh sách dịch vụ (true = đang tải, false = hoàn tất).
-    const [loadingServices, setLoadingServices] = useState(true);
-    // **useState**: Lưu trữ thông báo lỗi khi tải danh sách dịch vụ (null nếu không có lỗi).
-    const [errorServices, setErrorServices] = useState(null);
-    // **useState**: Lưu trữ thông tin dịch vụ đang chỉnh sửa (object hoặc null).
-    const [editingService, setEditingService] = useState(null);
-    // **useState**: Lưu trữ đường dẫn file Excel để xuất dữ liệu.
-    const [excelFilePath, setExcelFilePath] = useState('');
-    const { services, loading, error } = useServices();
-
-    // **Hàm `fetchServicesList`**: Lấy danh sách dịch vụ từ API dựa trên tham số tìm kiếm.
-    const fetchServicesList = useCallback(async (searchParams) => {
-        try {
-            setLoadingServices(true);
-            const deviceName = localStorage.getItem('deviceName') || '';
-            const refreshToken = localStorage.getItem('refreshToken') || '';
-            const token = localStorage.getItem('token') || '';
-            const userID = localStorage.getItem('userID') || '';
-
-            const headers = {
-                'Content-Type': 'application/json',
-                DeviceName: deviceName,
-                RefreshToken: refreshToken,
-                UserID: userID,
-                Authorization: token ? `Bearer ${token}` : '',
-            };
-
-            const response = await fetch('https://buitoandev.somee.com/api/Servicess/GetList_SearchServicess', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(searchParams),
-            });
-
-            if (!response.ok) throw new Error('Lỗi khi gọi API');
-            const data = await response.json();
-            let proOf = [];
-            if (Array.isArray(data)) {
-                proOf = data;
-            } else if (data && data.data && Array.isArray(data.data)) {
-                proOf = data.data;
-            }
-            setServicesList(proOf);
-        } catch (error) {
-            setErrorServices(error.message);
-            setServicesList([]);
-        } finally {
-            setLoadingServices(false);
-        }
-    }, []);
-
-    // **useEffect**: Tải danh sách dịch vụ mặc định khi component mount.
-    useEffect(() => {
-        fetchServicesList({});
-    }, [fetchServicesList]);
-
-    // **Hàm `handleImageChange`**: Xử lý khi người dùng chọn file hình ảnh để xem trước.
+    // Xử lý tải hình ảnh
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setServiceImage(file);
+            setImageFile(file);
+            // Tạo preview
             const reader = new FileReader();
-            reader.onloadend = () => setImagePreview(reader.result);
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+                // Lưu base64 vào formData (chỉ lấy phần base64, bỏ prefix)
+                const base64String = reader.result.split(',')[1];
+                setFormData((prev) => ({
+                    ...prev,
+                    productImages: base64String,
+                }));
+            };
             reader.readAsDataURL(file);
         }
     };
 
-    // **Hàm `handleSearch`**: Tìm kiếm dịch vụ theo ID hoặc tên dựa trên từ khóa.
+    // Xử lý thay đổi input tìm kiếm
+    const handleSearchChange = (e) => {
+        const { name, value } = e.target;
+        setSearchData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    // Tìm kiếm
     const handleSearch = () => {
-        let searchParams = {};
-        if (searchTerm) {
-            searchParams = !isNaN(searchTerm) ? { serviceID: parseInt(searchTerm, 10) } : { serviceName: searchTerm };
-        }
-        fetchServicesList(searchParams);
+        setPageIndex(1);
+        fetchProducts(1, searchData);
     };
 
-    // **Hàm `handleEdit`**: Chuẩn bị dữ liệu để chỉnh sửa dịch vụ và hiển thị form.
-    const handleEdit = (serviceID) => {
-        const serviceToEdit = servicesList.find((service) => service.serviceID === serviceID);
-        if (serviceToEdit) {
-            setEditingService(serviceToEdit);
-            setProductsOfServicesID(serviceToEdit.productsOfServicesID);
-            setServiceName(serviceToEdit.serviceName);
-            setDescription(serviceToEdit.description);
-            setPriceService(serviceToEdit.priceService.toString());
-            setImagePreview(`https://buitoandev.somee.com/Images/${serviceToEdit.serviceImage}`);
-            setIsFormVisible(true);
-        }
+    // Mở form thêm sản phẩm
+    const handleAddProduct = () => {
+        setIsEditMode(false);
+        setEditingProductId(null);
+        setFormData({
+            supplierId: '',
+            productName: '',
+            description: '',
+            sellingPrice: '',
+            quantity: '',
+            unit: '',
+            minimumStock: '',
+            productImages: '',
+            costPrice: '',
+        });
+        setImageFile(null);
+        setImagePreview('');
+        setIsFormVisible(true);
     };
 
-    // **Hàm `handleSubmit`**: Gửi form để thêm hoặc cập nhật dịch vụ qua API.
-    const handleSubmit = async (e) => {
+    // Mở form sửa sản phẩm
+    const handleEditProduct = (product) => {
+        setIsEditMode(true);
+        setEditingProductId(product.id);
+        setFormData({
+            supplierId: product.supplierId || '',
+            productName: product.productName || '',
+            description: product.description || '',
+            sellingPrice: product.sellingPrice || '',
+            quantity: product.quantity || '',
+            unit: product.unit || '',
+            minimumStock: product.minimumStock || '',
+            productImages: product.productImages || '',
+            costPrice: product.costPrice || '',
+        });
+        setImageFile(null);
+        setImagePreview(product.productImages ? `data:image/jpeg;base64,${product.productImages}` : '');
+        setIsFormVisible(true);
+    };
+
+    // Gửi form (Thêm hoặc Sửa)
+    const handleSubmitForm = async (e) => {
         e.preventDefault();
-        const deviceName = localStorage.getItem('deviceName') || '';
-        const refreshToken = localStorage.getItem('refreshToken') || '';
-        const token = localStorage.getItem('token') || '';
-        const userID = localStorage.getItem('userID') || '';
 
-        const headers = {
-            'Content-Type': 'application/json',
-            DeviceName: deviceName,
-            RefreshToken: refreshToken,
-            Authorization: token ? `Bearer ${token}` : '',
-            UserID: userID,
-        };
-
-        // **Hàm con `urlToBase64`**: Chuyển URL hình ảnh thành Base64.
-        const urlToBase64 = async (url) => {
-            try {
-                const response = await fetch(url);
-                const blob = await response.blob();
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-            } catch (error) {
-                console.error('Lỗi khi chuyển URL thành Base64:', error);
-                return '';
-            }
-        };
-
-        let serviceImageToSend = '';
-        if (serviceImage) {
-            serviceImageToSend = imagePreview.split(',')[1];
-        } else if (editingService) {
-            const imageUrl = `https://buitoandev.somee.com/Images/${editingService.serviceImage}`;
-            serviceImageToSend = await urlToBase64(imageUrl);
-        }
-
-        const formData = {
-            serviceID: editingService?.serviceID,
-            productsOfServicesID: parseInt(productsOfServicesID),
-            serviceName,
-            description,
-            serviceImage: serviceImageToSend,
-            priceService: parseFloat(priceService),
-        };
-
-        try {
-            const response = await fetch(
-                editingService
-                    ? 'https://buitoandev.somee.com/api/Servicess/Update_Servicess'
-                    : 'https://buitoandev.somee.com/api/Servicess/Insert_Servicess',
-                {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(formData),
-                },
-            );
-
-            const result = await response.json();
-            if (!response.ok) {
-                console.log('Cập nhật dịch vụ thất bại:', result);
-                setSuccessMessage(result.resposeMessage || 'Cập nhật dịch vụ thất bại!');
-            } else {
-                console.log('Cập nhật dịch vụ thành công:', result);
-                setSuccessMessage(result.resposeMessage || 'Cập nhật dịch vụ thành công!');
-                const newAccessToken = response.headers.get('New-AccessToken');
-                const newRefreshToken = response.headers.get('New-RefreshToken');
-
-                if (newAccessToken) {
-                    localStorage.setItem('token', newAccessToken);
-                }
-                if (newRefreshToken) {
-                    localStorage.setItem('refreshToken', newRefreshToken);
-                }
-
-                if (editingService) {
-                    setServicesList(
-                        servicesList.map((service) =>
-                            service.serviceID === editingService.serviceID ? { ...service, ...formData } : service,
-                        ),
-                    );
-                } else {
-                    fetchServicesList({});
-                }
-
-                setProductsOfServicesID('');
-                setServiceName('');
-                setDescription('');
-                setPriceService('');
-                setServiceImage(null);
-                setImagePreview('');
-                setEditingService(null);
-
-                setTimeout(() => {
-                    setIsFormVisible(false);
-                    setSuccessMessage('');
-                }, 3500);
-            }
-        } catch (error) {
-            console.error('Lỗi khi xử lý dịch vụ:', error);
-            setSuccessMessage('Có lỗi xảy ra: ' + error.message);
-        }
-    };
-
-    // **Hàm `handleDeleteSuccess`**: Hiển thị thông báo xóa thành công và tự động ẩn sau 3 giây.
-    const handleDeleteSuccess = (message) => {
-        setSuccessMessage(message);
-        setTimeout(() => setSuccessMessage(''), 3000);
-    };
-
-    // **Hàm `handleDelete`**: Xóa dịch vụ khỏi danh sách hiển thị.
-    const handleDelete = (serviceID) => {
-        setServicesList(servicesList.filter((service) => service.serviceID !== serviceID));
-    };
-
-    // **Hàm `toggleFormVisibility`**: Chuyển đổi trạng thái hiển thị form và reset dữ liệu khi đóng.
-    const toggleFormVisibility = () => {
-        setIsFormVisible(!isFormVisible);
-        if (isFormVisible) {
-            setEditingService(null);
-            setProductsOfServicesID('');
-            setServiceName('');
-            setDescription('');
-            setPriceService('');
-            setImagePreview('');
-        }
-    };
-
-    // **Hàm `handleExportExcel`**: Xuất danh sách dịch vụ ra file Excel.
-    const handleExportExcel = async () => {
-        if (!excelFilePath) {
-            setSuccessMessage('Vui lòng nhập đường dẫn file Excel');
+        if (!formData.productName || !formData.supplierId || !formData.serviceTypeId) {
+            setSuccessMessage('Vui lòng nhập đủ thông tin bắt buộc');
+            setShowSuccessMessage(true);
             return;
         }
 
         try {
-            const deviceName = localStorage.getItem('deviceName') || '';
-            const refreshToken = localStorage.getItem('refreshToken') || '';
-            const token = localStorage.getItem('token') || '';
-            const userID = localStorage.getItem('userID') || '';
+            setIsLoading(true);
+            let payload = { ...formData };
+            // Chuyển đổi kiểu dữ liệu
+            payload.serviceTypeId = parseInt(payload.serviceTypeId) || 0;
+            payload.supplierId = parseInt(payload.supplierId) || 0;
+            payload.sellingPrice = parseFloat(payload.sellingPrice) || 0;
+            payload.costPrice = parseFloat(payload.costPrice) || 0;
+            payload.quantity = parseInt(payload.quantity) || 0;
+            payload.minimumStock = parseInt(payload.minimumStock) || 0;
 
-            const headers = {
-                'Content-Type': 'application/json',
-                DeviceName: deviceName,
-                RefreshToken: refreshToken,
-                Authorization: token ? `Bearer ${token}` : '',
-                UserID: userID,
-            };
-
-            const serviceData = editingService
-                ? {
-                      serviceID: editingService.serviceID,
-                      serviceName: editingService.serviceName,
-                      productsOfServicesID: editingService.productsOfServicesID,
-                      filePath: excelFilePath,
-                  }
-                : {
-                      serviceID: null,
-                      serviceName: null,
-                      productsOfServicesID: null,
-                      filePath: excelFilePath,
-                  };
-
-            const response = await fetch('https://buitoandev.somee.com/api/Servicess/ExportServicessToExcel', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(serviceData),
-            });
-
-            if (!response.ok) {
-                throw new Error('Xuất Excel thất bại');
+            if (isEditMode) {
+                payload.id = editingProductId;
+                payload.status = 'active';
+                await axios.post(`${API_BASE}/Product/updateproduct`, payload);
+            } else {
+                await axios.post(`${API_BASE}/Product/addproduct`, payload);
             }
 
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'services.xlsx';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-
-            setSuccessMessage('Xuất Excel thành công');
-            setTimeout(() => {
-                setSuccessMessage('');
-            }, 3000);
+            setSuccessMessage(isEditMode ? 'Cập nhật sản phẩm thành công!' : 'Thêm sản phẩm thành công!');
+            setShowSuccessMessage(true);
+            setIsFormVisible(false);
+            fetchProducts(pageIndex, searchData);
         } catch (error) {
-            console.error('Lỗi khi xuất Excel:', error);
-            setSuccessMessage('Có lỗi xảy ra: ' + error.message);
+            console.error('Lỗi:', error);
+            setSuccessMessage(error.response?.data?.message || 'Có lỗi xảy ra');
+            setShowSuccessMessage(true);
+        } finally {
+            setIsLoading(false);
         }
     };
 
+    // Toggle select checkbox
+    const handleSelectProduct = (productId) => {
+        const newSelected = new Set(selectedProducts);
+        if (newSelected.has(productId)) {
+            newSelected.delete(productId);
+        } else {
+            newSelected.add(productId);
+        }
+        setSelectedProducts(newSelected);
+    };
+
+    // Select all checkbox
+    const handleSelectAll = () => {
+        if (selectedProducts.size === products.length) {
+            setSelectedProducts(new Set());
+        } else {
+            setSelectedProducts(new Set(products.map((p) => p.id)));
+        }
+    };
+
+    // Xóa sản phẩm (single hoặc multiple)
+    const handleDeleteProduct = async (productIds = null) => {
+        const idsToDelete = productIds || Array.from(selectedProducts);
+
+        if (idsToDelete.length === 0) {
+            setSuccessMessage('Vui lòng chọn sản phẩm để xóa');
+            setShowSuccessMessage(true);
+            return;
+        }
+
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa ${idsToDelete.length} sản phẩm?`)) {
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+
+            // Xóa từng sản phẩm
+            for (const id of idsToDelete) {
+                await axios.post(`${API_BASE}/Product/deleteproduct`, { id });
+            }
+
+            setSuccessMessage(`Đã xóa ${idsToDelete.length} sản phẩm thành công!`);
+            setShowSuccessMessage(true);
+            setSelectedProducts(new Set());
+            fetchProducts(pageIndex, searchData);
+        } catch (error) {
+            console.error('Lỗi xóa sản phẩm:', error);
+            setSuccessMessage('Lỗi xóa sản phẩm');
+            setShowSuccessMessage(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Xuất Excel
+    const handleExportExcel = async () => {
+        if (products.length === 0) {
+            setSuccessMessage('Không có sản phẩm để xuất');
+            setShowSuccessMessage(true);
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            const productIds = products.map((p) => p.id);
+            const response = await axios.post(`${API_BASE}/Product/exportproducttoexcel`, {
+                productIds,
+            });
+
+            // Download file từ response
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'products.xlsx');
+            document.body.appendChild(link);
+            link.click();
+            link.parentElement.removeChild(link);
+
+            setSuccessMessage('Xuất Excel thành công!');
+            setShowSuccessMessage(true);
+        } catch (error) {
+            console.error('Lỗi xuất Excel:', error);
+            setSuccessMessage('Lỗi xuất Excel');
+            setShowSuccessMessage(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Tính số trang
+    const totalPages = Math.ceil(totalRecordCount / pageSize);
+
     return (
         <div className={cx('wrapper')}>
-            {successMessage && <SuccessMessage message={successMessage} />}
+            {showSuccessMessage && <SuccessMessage message={successMessage} />}
+
+            {/* Header */}
             <div className={cx('header')}>
-                <h1>Dịch Vụ</h1>
-                <div className={cx('search-container')}>
-                    <input
-                        type="text"
-                        placeholder="Tìm kiếm dịch vụ..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className={cx('search-input')}
-                    />
-                    <button onClick={handleSearch} className={cx('search-button')}>
-                        <FontAwesomeIcon icon={faSearch} />
+                <h1>Quản Lý Sản Phẩm</h1>
+                <div className={cx('header-actions')}>
+                    <button className={cx('btn-primary')} onClick={handleAddProduct}>
+                        <FontAwesomeIcon icon={faPlus} />
+                        Thêm Sản Phẩm
+                    </button>
+                    {selectedProducts.size > 0 && (
+                        <button
+                            className={cx('btn-delete-multiple', {
+                                disabled: selectedProducts.size > 1,
+                            })}
+                            onClick={() => handleDeleteProduct()}
+                            disabled={selectedProducts.size > 1}
+                            title={
+                                selectedProducts.size > 1
+                                    ? 'Chỉ có thể xóa 1 sản phẩm tại một lần'
+                                    : 'Xóa sản phẩm được chọn'
+                            }
+                        >
+                            <FontAwesomeIcon icon={faTrash} />
+                            Xóa ({selectedProducts.size})
+                        </button>
+                    )}
+                    <button className={cx('btn-export')} onClick={handleExportExcel}>
+                        <FontAwesomeIcon icon={faDownload} />
+                        Xuất Excel
                     </button>
                 </div>
+            </div>
 
-                <div className={cx('excel-export')}>
-                    <input
-                        type="text"
-                        placeholder="Nhập đường dẫn file Excel"
-                        value={excelFilePath}
-                        onChange={(e) => setExcelFilePath(e.target.value)}
-                    />
-                    <button onClick={handleExportExcel}>Xuất Excel</button>
-                </div>
-                {!isFormVisible && (
-                    <div className={cx('open-form-icon')} onClick={toggleFormVisibility}>
-                        <FontAwesomeIcon icon={faPlus} />
-                    </div>
+            {/* Search */}
+            <div className={cx('search-section')}>
+                <input
+                    type="text"
+                    name="productName"
+                    placeholder="Tìm kiếm tên sản phẩm..."
+                    value={searchData.productName}
+                    onChange={handleSearchChange}
+                    className={cx('search-input')}
+                />
+                <select
+                    name="supplierId"
+                    value={searchData.supplierId}
+                    onChange={handleSearchChange}
+                    className={cx('search-input')}
+                >
+                    <option value="">-- Tất cả nhà cung cấp --</option>
+                    {suppliers.map((supplier) => (
+                        <option key={supplier.id} value={supplier.id}>
+                            {supplier.supplierName}
+                        </option>
+                    ))}
+                </select>
+
+                <button className={cx('btn-search')} onClick={handleSearch}>
+                    <FontAwesomeIcon icon={faSearch} />
+                    Tìm Kiếm
+                </button>
+            </div>
+
+            {/* Products Table */}
+            <div className={cx('table-container')}>
+                {isLoading ? (
+                    <div className={cx('loading')}>Đang tải...</div>
+                ) : products.length > 0 ? (
+                    <table className={cx('products-table')}>
+                        <thead>
+                            <tr>
+                                <th className={cx('checkbox-cell')}>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedProducts.size === products.length && products.length > 0}
+                                        onChange={handleSelectAll}
+                                        title="Chọn tất cả"
+                                    />
+                                </th>
+                                <th>Tên Sản Phẩm</th>
+                                <th>Nhà Cung Cấp</th>
+                                <th>Giá Bán</th>
+                                <th>Số Lượng</th>
+                                <th>Đơn Vị</th>
+                                <th>Sửa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {products.map((product) => (
+                                <tr key={product.id} className={cx({ selected: selectedProducts.has(product.id) })}>
+                                    <td className={cx('checkbox-cell')}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedProducts.has(product.id)}
+                                            onChange={() => handleSelectProduct(product.id)}
+                                        />
+                                    </td>
+                                    <td>{product.productName}</td>
+                                    <td>{product.supplierName}</td>
+                                    <td>{Number(product.sellingPrice).toLocaleString('vi-VN')} ₫</td>
+                                    <td>{product.quantity}</td>
+                                    <td>{product.unit}</td>
+                                    <td className={cx('action-buttons')}>
+                                        <button
+                                            className={cx('btn-icon-edit')}
+                                            onClick={() => handleEditProduct(product)}
+                                            title="Sửa"
+                                        >
+                                            <FontAwesomeIcon icon={faEdit} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                ) : (
+                    <div className={cx('empty-state')}>Không có sản phẩm nào</div>
                 )}
             </div>
-            {isFormVisible && (
-                <form className={cx('form-content')} onSubmit={handleSubmit}>
-                    <div className={cx('form-header')}>
-                        <FontAwesomeIcon icon={faTimes} className={cx('close-icon')} onClick={toggleFormVisibility} />
-                    </div>
-                    <h2 className={cx('form-title')}>{editingService ? 'Chỉnh sửa Dịch vụ' : 'Thêm Dịch vụ Mới'}</h2>
-                    <div className={cx('form-row')}>
-                        {loading ? (
-                            <p>Đang tải dữ liệu...</p>
-                        ) : error ? (
-                            <p>Lỗi: {error}</p>
-                        ) : (
-                            <div className={cx('form-group')}>
-                                <label htmlFor="productsOfServicesID">Loại Dịch Vụ:</label>
-                                <select
-                                    id="productsOfServicesID"
-                                    value={productsOfServicesID}
-                                    onChange={(e) => setProductsOfServicesID(e.target.value)}
-                                    required
-                                >
-                                    <option value="">Chọn dịch vụ</option>
-                                    {services.map((service) => (
-                                        <option key={service.productsOfServicesID} value={service.productsOfServicesID}>
-                                            {service.productsOfServicesName}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-                        <div className={cx('form-group')}>
-                            <label htmlFor="serviceName">Tên dịch vụ:</label>
-                            <input
-                                type="text"
-                                id="serviceName"
-                                value={serviceName}
-                                onChange={(e) => setServiceName(e.target.value)}
-                                required
-                            />
-                        </div>
-                    </div>
-                    <div className={cx('form-row')}>
-                        <div className={cx('form-group', 'textarea-group')}>
-                            <label htmlFor="description">Mô tả:</label>
-                            <textarea
-                                id="description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className={cx('form-group')}>
-                            <label htmlFor="priceService">Giá dịch vụ:</label>
-                            <input
-                                type="text"
-                                id="priceService"
-                                value={priceService}
-                                onChange={(e) => setPriceService(e.target.value)}
-                                required
-                            />
-                        </div>
-                    </div>
-                    <div className={cx('form-row')}>
-                        <div className={cx('form-group')}>
-                            <label htmlFor="serviceImage">Hình ảnh dịch vụ:</label>
-                            <div className={cx('image-container')}>
-                                <input type="file" id="serviceImage" accept="image/*" onChange={handleImageChange} />
-                                {imagePreview && (
-                                    <img className={cx('img-xemtrc')} src={imagePreview} alt="Xem trước" />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    <button className={cx('submit')} type="submit">
-                        {editingService ? 'Cập nhật dịch vụ' : 'Thêm dịch vụ'}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className={cx('pagination')}>
+                    <button disabled={pageIndex === 1} onClick={() => fetchProducts(pageIndex - 1, searchData)}>
+                        Trang Trước
                     </button>
-                </form>
+                    <span>
+                        Trang {pageIndex} / {totalPages}
+                    </span>
+                    <button
+                        disabled={pageIndex === totalPages}
+                        onClick={() => fetchProducts(pageIndex + 1, searchData)}
+                    >
+                        Trang Sau
+                    </button>
+                </div>
             )}
 
-            {loadingServices ? (
-                <div>Đang tải danh sách dịch vụ...</div>
-            ) : errorServices ? (
-                <div>Lỗi: {errorServices}</div>
-            ) : (
-                <ItemProduct
-                    services={servicesList}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onDeleteSuccess={handleDeleteSuccess}
-                />
+            {/* Modal Form */}
+            {isFormVisible && (
+                <div className={cx('modal-overlay')}>
+                    <div className={cx('modal-content')}>
+                        <div className={cx('modal-header')}>
+                            <h2>{isEditMode ? 'Cập Nhật Sản Phẩm' : 'Thêm Sản Phẩm'}</h2>
+                            <button className={cx('btn-close')} onClick={() => setIsFormVisible(false)}>
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                        </div>
+
+                        <form className={cx('form')} onSubmit={handleSubmitForm}>
+                            <div className={cx('form-group')}>
+                                <label>Tên Sản Phẩm *</label>
+                                <input
+                                    type="text"
+                                    name="productName"
+                                    value={formData.productName}
+                                    onChange={handleFormChange}
+                                    placeholder="Nhập tên sản phẩm"
+                                    required
+                                />
+                            </div>
+
+                            <div className={cx('form-row')}>
+                                <div className={cx('form-group')}>
+                                    <label>Nhà Cung Cấp *</label>
+                                    <select
+                                        name="supplierId"
+                                        value={formData.supplierId}
+                                        onChange={handleFormChange}
+                                        required
+                                    >
+                                        <option value="">-- Chọn Nhà Cung Cấp --</option>
+                                        {suppliers.map((supplier) => (
+                                            <option key={supplier.id} value={supplier.id}>
+                                                {supplier.supplierName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className={cx('form-group')}>
+                                <label>Mô Tả</label>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleFormChange}
+                                    placeholder="Nhập mô tả sản phẩm"
+                                />
+                            </div>
+
+                            <div className={cx('form-row')}>
+                                <div className={cx('form-group')}>
+                                    <label>Giá Vốn (₫)</label>
+                                    <input
+                                        type="number"
+                                        name="costPrice"
+                                        value={formData.costPrice}
+                                        onChange={handleFormChange}
+                                        placeholder="0"
+                                    />
+                                </div>
+
+                                <div className={cx('form-group')}>
+                                    <label>Giá Bán (₫) *</label>
+                                    <input
+                                        type="number"
+                                        name="sellingPrice"
+                                        value={formData.sellingPrice}
+                                        onChange={handleFormChange}
+                                        placeholder="0"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={cx('form-row')}>
+                                <div className={cx('form-group')}>
+                                    <label>Số Lượng</label>
+                                    <input
+                                        type="number"
+                                        name="quantity"
+                                        value={formData.quantity}
+                                        onChange={handleFormChange}
+                                        placeholder="0"
+                                    />
+                                </div>
+
+                                <div className={cx('form-group')}>
+                                    <label>Tồn Kho Tối Thiểu</label>
+                                    <input
+                                        type="number"
+                                        name="minimumStock"
+                                        value={formData.minimumStock}
+                                        onChange={handleFormChange}
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={cx('form-row')}>
+                                <div className={cx('form-group')}>
+                                    <label>Đơn Vị</label>
+                                    <input
+                                        type="text"
+                                        name="unit"
+                                        value={formData.unit}
+                                        onChange={handleFormChange}
+                                        placeholder="Lọ, Hộp, Chai..."
+                                    />
+                                </div>
+
+                                <div className={cx('form-group')}>
+                                    <label>Hình Ảnh Sản Phẩm</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        className={cx('file-input')}
+                                    />
+                                    {imagePreview && (
+                                        <div className={cx('image-preview')}>
+                                            <img src={imagePreview} alt="Xem trước hình ảnh" />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className={cx('form-actions')}>
+                                <button
+                                    type="button"
+                                    className={cx('btn-cancel')}
+                                    onClick={() => setIsFormVisible(false)}
+                                >
+                                    Hủy
+                                </button>
+                                <button type="submit" className={cx('btn-submit')} disabled={isLoading}>
+                                    {isLoading ? 'Đang xử lý...' : isEditMode ? 'Cập Nhật' : 'Thêm Sản Phẩm'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
     );
 }
 
-export default Servicess;
+export default Products;
