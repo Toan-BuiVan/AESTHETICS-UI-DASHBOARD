@@ -581,7 +581,11 @@ function Invoice() {
                     <div className={cx('loading')}>Đang tải dữ liệu...</div>
                 ) : invoices.length > 0 ? (
                     <>
-                        <ItemInvoice invoices={invoices} onDeleteSuccess={handleDeleteInvoice} onStatusUpdate={handleInvoiceStatusUpdate} />
+                        <ItemInvoice
+                            invoices={invoices}
+                            onDeleteSuccess={handleDeleteInvoice}
+                            onStatusUpdate={handleInvoiceStatusUpdate}
+                        />
                         {/* Pagination */}
                         <div className={cx('pagination')}>
                             {pageIndex > 1 && (

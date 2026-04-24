@@ -61,12 +61,12 @@ function ItemRefund({ refunds, onStatusUpdate }) {
     };
 
     const getStatusBadgeColor = (status) => {
-        const option = refundStatusOptions.find(opt => opt.value === status);
+        const option = refundStatusOptions.find((opt) => opt.value === status);
         return option ? option.color : '#6c757d';
     };
 
     const getStatusLabel = (status) => {
-        const option = refundStatusOptions.find(opt => opt.value === status);
+        const option = refundStatusOptions.find((opt) => opt.value === status);
         return option ? option.label : status;
     };
 
@@ -85,7 +85,7 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                 checked={refunds.length > 0 && selectedCount === refunds.length}
                                 onChange={(e) => {
                                     if (e.target.checked) {
-                                        setSelectedRefundIds(new Set(refunds.map(r => r.id)));
+                                        setSelectedRefundIds(new Set(refunds.map((r) => r.id)));
                                     } else {
                                         setSelectedRefundIds(new Set());
                                     }
@@ -123,19 +123,14 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                     <td>HĐ-{refund.invoiceId}</td>
                                     <td>{refund.customerId || 'N/A'}</td>
                                     <td className={cx('currency')}>
-                                        {refund.refundAmount
-                                            ? refund.refundAmount.toLocaleString('vi-VN')
-                                            : '0'}{' '}
-                                        ₫
+                                        {refund.refundAmount ? refund.refundAmount.toLocaleString('vi-VN') : '0'} ₫
                                     </td>
                                     <td>
                                         <span className={cx('badge-method')}>
                                             {refundMethodLabels[refund.refundMethod] || refund.refundMethod}
                                         </span>
                                     </td>
-                                    <td className={cx('reason')}>
-                                        {refund.refundReason || 'N/A'}
-                                    </td>
+                                    <td className={cx('reason')}>{refund.refundReason || 'N/A'}</td>
                                     <td>
                                         {editingId === refund.id ? (
                                             <div className={cx('status-edit-container')}>
@@ -157,11 +152,7 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                                 >
                                                     <FontAwesomeIcon icon={faSave} />
                                                 </button>
-                                                <button
-                                                    className={cx('btn-cancel')}
-                                                    onClick={handleCancel}
-                                                    title="Hủy"
-                                                >
+                                                <button className={cx('btn-cancel')} onClick={handleCancel} title="Hủy">
                                                     <FontAwesomeIcon icon={faTimes} />
                                                 </button>
                                             </div>
@@ -195,9 +186,7 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                         <button
                                             className={cx('btn-expand')}
                                             onClick={() =>
-                                                setExpandedRefundId(
-                                                    expandedRefundId === refund.id ? null : refund.id,
-                                                )
+                                                setExpandedRefundId(expandedRefundId === refund.id ? null : refund.id)
                                             }
                                             title="Xem chi tiết"
                                         >
@@ -233,14 +222,17 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                                     <div className={cx('detail-item')}>
                                                         <span className={cx('label')}>Phương Thức:</span>
                                                         <span className={cx('value')}>
-                                                            {refundMethodLabels[refund.refundMethod] || refund.refundMethod}
+                                                            {refundMethodLabels[refund.refundMethod] ||
+                                                                refund.refundMethod}
                                                         </span>
                                                     </div>
                                                     <div className={cx('detail-item')}>
                                                         <span className={cx('label')}>Trạng Thái:</span>
                                                         <span
                                                             className={cx('value', 'status-badge')}
-                                                            style={{ backgroundColor: getStatusBadgeColor(refund.status) }}
+                                                            style={{
+                                                                backgroundColor: getStatusBadgeColor(refund.status),
+                                                            }}
                                                         >
                                                             {getStatusLabel(refund.status)}
                                                         </span>
@@ -253,11 +245,15 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                                             </div>
                                                             <div className={cx('detail-item')}>
                                                                 <span className={cx('label')}>Số Tài Khoản:</span>
-                                                                <span className={cx('value')}>{refund.bankAccount}</span>
+                                                                <span className={cx('value')}>
+                                                                    {refund.bankAccount}
+                                                                </span>
                                                             </div>
                                                             <div className={cx('detail-item')}>
                                                                 <span className={cx('label')}>Chủ Tài Khoản:</span>
-                                                                <span className={cx('value')}>{refund.bankAccountName}</span>
+                                                                <span className={cx('value')}>
+                                                                    {refund.bankAccountName}
+                                                                </span>
                                                             </div>
                                                         </>
                                                     )}
@@ -277,7 +273,9 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                                         <div className={cx('detail-item')}>
                                                             <span className={cx('label')}>Ngày Duyệt:</span>
                                                             <span className={cx('value')}>
-                                                                {new Date(refund.approvedDate).toLocaleDateString('vi-VN')}
+                                                                {new Date(refund.approvedDate).toLocaleDateString(
+                                                                    'vi-VN',
+                                                                )}
                                                             </span>
                                                         </div>
                                                     )}
@@ -285,7 +283,9 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                                         <div className={cx('detail-item')}>
                                                             <span className={cx('label')}>Ngày Hoàn Thành:</span>
                                                             <span className={cx('value')}>
-                                                                {new Date(refund.completedDate).toLocaleDateString('vi-VN')}
+                                                                {new Date(refund.completedDate).toLocaleDateString(
+                                                                    'vi-VN',
+                                                                )}
                                                             </span>
                                                         </div>
                                                     )}

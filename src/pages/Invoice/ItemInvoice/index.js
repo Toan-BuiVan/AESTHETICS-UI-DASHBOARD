@@ -337,7 +337,9 @@ function ItemInvoice({ invoices, onDeleteSuccess, onStatusUpdate }) {
                                             </div>
                                         ) : (
                                             <div className={cx('status-display')}>
-                                                <span className={cx('order-status')}>{invoice.orderStatus || 'N/A'}</span>
+                                                <span className={cx('order-status')}>
+                                                    {invoice.orderStatus || 'N/A'}
+                                                </span>
                                                 {isSelected && (
                                                     <button
                                                         className={cx('btn-edit')}
