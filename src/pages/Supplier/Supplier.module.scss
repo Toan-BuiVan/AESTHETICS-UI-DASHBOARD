@@ -60,6 +60,20 @@
     }
 }
 
+.btn-edit {
+    background-color: #2196f3;
+    color: white;
+
+    &:hover {
+        background-color: #0b7dda;
+    }
+
+    &:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+}
+
 .btn-delete-multiple {
     background-color: #f44336;
     color: white;
@@ -129,12 +143,12 @@
     }
 }
 
-.clinics-table {
+.suppliers-table {
     text-align: left;
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
-    table-layout: fixed;
+    font-size: 13px;
+    table-layout: auto;
 
     thead {
         background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
@@ -142,28 +156,43 @@
         color: white;
 
         th {
-            padding: 16px;
+            padding: 12px 14px;
             text-align: left;
             font-weight: 600;
             color: white;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-size: 12px;
+            letter-spacing: 0.3px;
+
+            &:nth-child(1) {
+                width: 50px;
+                text-align: center;
+            }
 
             &:nth-child(2) {
-                width: 30%;
+                width: 60px;
             }
 
             &:nth-child(3) {
-                width: 25%;
+                min-width: 180px;
             }
 
             &:nth-child(4) {
-                width: 20%;
+                min-width: 200px;
             }
 
             &:nth-child(5) {
-                width: 15%;
+                min-width: 130px;
+            }
+
+            &:nth-child(6) {
+                min-width: 150px;
+            }
+
+            &:nth-child(7) {
+                width: 100px;
                 text-align: center;
             }
         }
@@ -183,51 +212,64 @@
             }
 
             td {
-                padding: 12px 16px;
+                padding: 10px 14px;
                 color: #666;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                font-size: 13px;
+                height: 40px;
+                vertical-align: middle;
+
+                &:nth-child(1) {
+                    width: 50px;
+                    text-align: center;
+                }
 
                 &:nth-child(2) {
-                    width: 30%;
+                    width: 60px;
                 }
 
                 &:nth-child(3) {
-                    width: 25%;
+                    min-width: 180px;
                 }
 
                 &:nth-child(4) {
-                    width: 20%;
+                    min-width: 200px;
+                }
+
+                &:nth-child(5) {
+                    min-width: 130px;
+                }
+
+                &:nth-child(6) {
+                    min-width: 150px;
                 }
 
                 &.action-buttons {
-                    // width: 15%;
                     text-align: center;
+                    padding: 6px 14px;
                     display: flex;
-                    gap: 8px;
+                    gap: 4px;
                     justify-content: center;
+                    align-items: center;
 
                     button {
-                        width: 36px;
-                        height: 36px;
+                        width: 28px;
+                        height: 28px;
                         border: 1px solid #ddd;
                         border-radius: 4px;
-                        // background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+                        background-color: #fff;
                         cursor: pointer;
                         transition: all 0.2s ease;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 14px;
-                        flex-shrink: 0;
+                        color: #666;
 
                         &:hover {
-                            transform: scale(1.1);
-                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-                        }
-
-                        &:active {
-                            transform: scale(0.95);
+                            background-color: #f0f0f0;
+                            border-color: #999;
+                            color: #333;
                         }
                     }
                 }
@@ -236,79 +278,42 @@
     }
 }
 
-.btn-icon-edit {
-    color: #2196f3;
-    border-color: #2196f3;
-
-    &:hover {
-        background-color: #e3f2fd;
-    }
-}
-
-.status {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-    background-color: #ffebee;
-    color: #c62828;
-
-    &.active {
-        background-color: #e8f5e9;
-        color: #2e7d32;
-    }
-}
-
-.empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: #999;
-    font-size: 16px;
-}
-
-.loading {
-    text-align: center;
-    padding: 40px 20px;
-    color: #666;
-    font-size: 16px;
-}
-
 .pagination {
     display: flex;
     justify-content: center;
-    align-items: center;
-    gap: 12px;
+    gap: 10px;
     margin-top: 20px;
+    padding: 20px;
 
     button {
         padding: 8px 16px;
         border: 1px solid #ddd;
-        background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+        background-color: white;
         border-radius: 4px;
         cursor: pointer;
         font-size: 14px;
         transition: all 0.2s ease;
 
         &:hover:not(:disabled) {
-            background-color: #f0f0f0;
-            border-color: #999;
+            border-color: #4caf50;
+            color: #4caf50;
         }
 
         &:disabled {
-            opacity: 0.5;
+            background-color: #f5f5f5;
+            color: #ccc;
             cursor: not-allowed;
         }
     }
 
     span {
         padding: 8px 16px;
+        font-size: 14px;
         color: #666;
-        font-weight: 500;
-        white-space: nowrap;
     }
 }
 
-/* Modal Styles */
+/* Form Modal */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -317,41 +322,17 @@
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     z-index: 1000;
-    animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
 }
 
 .modal-content {
     background: white;
     border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    max-width: 500px;
     width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+    max-width: 500px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .modal-header {
@@ -364,82 +345,59 @@
     h2 {
         margin: 0;
         font-size: 20px;
-        color: #333;
         font-weight: 600;
+        color: #2c3e50;
     }
-}
 
-.btn-close {
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: #999;
-    cursor: pointer;
-    padding: 0;
-    transition: color 0.2s ease;
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #999;
+        transition: color 0.2s ease;
 
-    &:hover {
-        color: #333;
+        &:hover {
+            color: #333;
+        }
     }
 }
 
 .form {
-    padding: 24px 20px;
-}
+    padding: 20px;
 
-.form-group {
-    margin-bottom: 20px;
+    .form-group {
+        margin-bottom: 16px;
 
-    label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 500;
-        color: #333;
-        font-size: 14px;
-    }
-
-    input,
-    select {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 14px;
-        transition: border-color 0.3s ease;
-        font-family: inherit;
-
-        &:focus {
-            outline: none;
-            border-color: #4caf50;
-            box-shadow: 0 0 4px rgba(76, 175, 80, 0.2);
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #2c3e50;
         }
 
-        &:disabled {
-            background-color: #f5f5f5;
-            color: #999;
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+
+            &:focus {
+                outline: none;
+                border-color: #4caf50;
+                box-shadow: 0 0 4px rgba(76, 175, 80, 0.2);
+            }
         }
 
-        &::placeholder {
-            color: #999;
-        }
-    }
-}
-
-.form-group-checkbox {
-    margin-bottom: 20px;
-
-    label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 400;
-        color: #333;
-        cursor: pointer;
-
-        input[type='checkbox'] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
+        textarea {
+            resize: vertical;
+            min-height: 100px;
         }
     }
 }
@@ -456,41 +414,32 @@
         padding: 10px 20px;
         border: none;
         border-radius: 4px;
+        cursor: pointer;
         font-size: 14px;
         font-weight: 500;
-        cursor: pointer;
         transition: all 0.2s ease;
+    }
+
+    .btn-cancel {
+        background-color: #f5f5f5;
+        color: #666;
+
+        &:hover {
+            background-color: #eee;
+        }
+    }
+
+    .btn-submit {
+        background-color: #4caf50;
+        color: white;
 
         &:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        &:active:not(:disabled) {
-            transform: translateY(0);
+            background-color: #45a049;
         }
 
         &:disabled {
-            opacity: 0.6;
+            background-color: #cccccc;
             cursor: not-allowed;
         }
-    }
-}
-
-.btn-cancel {
-    background-color: #e0e0e0;
-    color: #333;
-
-    &:hover:not(:disabled) {
-        background-color: #d0d0d0;
-    }
-}
-
-.btn-submit {
-    background-color: #4caf50;
-    color: white;
-
-    &:hover:not(:disabled) {
-        background-color: #45a049;
     }
 }

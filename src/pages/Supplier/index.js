@@ -1,83 +1,67 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import styles from './StaffShift.module.scss';
+import styles from './Supplier.module.scss';
 import classNames from 'classnames/bind';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faPlus, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import SuccessMessage from '~/components/Layout/Defaultlayout/SuccessMessage';
 import useDebounce from '~/hooks/useDebounce';
 
 const cx = classNames.bind(styles);
 const API_BASE = 'http://localhost:5122/api';
 
-function StaffShift() {
-    // State quản lý danh sách ca làm việc
-    const [staffShifts, setStaffShifts] = useState([]);
+function Supplier() {
+    // State quản lý danh sách nhà cung cấp
+    const [suppliers, setSuppliers] = useState([]);
     const [totalRecordCount, setTotalRecordCount] = useState(0);
     const [pageIndex, setPageIndex] = useState(1);
     const [pageSize] = useState(10);
 
-    // State quản lý Staff dropdown
-    const [staffs, setStaffs] = useState([]);
-
     // State quản lý form
     const [isFormVisible, setIsFormVisible] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editingSupplierId, setEditingSupplierId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
 
     // State quản lý form input
     const [formData, setFormData] = useState({
-        date: '',
-        startDate: '',
-        endDate: '',
+        supplierName: '',
+        address: '',
+        phone: '',
     });
 
     // State tìm kiếm
     const [searchData, setSearchData] = useState({
         id: '',
-        staffId: '',
-        date: '',
+        supplierName: '',
     });
 
     // State quản lý checkbox selection
-    const [selectedShifts, setSelectedShifts] = useState(new Set());
+    const [selectedSuppliers, setSelectedSuppliers] = useState(new Set());
 
-    // Lấy danh sách Staff
-    const fetchStaffs = useCallback(async () => {
-        try {
-            const response = await axios.post(`${API_BASE}/Staff/get-list`, {});
-            if (response.data && response.data.baseDatas) {
-                setStaffs(response.data.baseDatas);
-            }
-        } catch (error) {
-            console.error('Lỗi lấy danh sách nhân viên:', error);
-        }
-    }, []);
-
-    // Lấy danh sách ca làm việc
-    const fetchStaffShifts = useCallback(
+    // Lấy danh sách nhà cung cấp
+    const fetchSuppliers = useCallback(
         async (page = 1, searchParams = {}) => {
             try {
                 setIsLoading(true);
-                const staffIdFromStorage = localStorage.getItem('staffId');
                 const payload = {
                     pageNo: page,
                     pageSize: pageSize,
-                    id: parseInt(searchParams.id) || null,
-                    staffId: searchParams.staffId ? parseInt(searchParams.staffId) : null,
-                    date: searchParams.date ? new Date(searchParams.date).toISOString() : null,
+                    id: searchParams.id ? parseInt(searchParams.id) : null,
+                    supplierName: searchParams.supplierName || null,
                 };
 
-                const response = await axios.post(`${API_BASE}/StaffShift/getstaffshiftlist`, payload);
+                const response = await axios.post(`${API_BASE}/Supplier/paging`, payload);
                 if (response.data && response.data.baseDatas) {
-                    setStaffShifts(response.data.baseDatas);
+                    setSuppliers(response.data.baseDatas);
                     setTotalRecordCount(response.data.totalRecordCount);
                     setPageIndex(response.data.pageIndex);
                 }
             } catch (error) {
-                console.error('Lỗi lấy danh sách ca làm việc:', error);
-                setSuccessMessage('Lỗi lấy danh sách ca làm việc');
+                console.error('Lỗi lấy danh sách nhà cung cấp:', error);
+                setSuccessMessage('Lỗi lấy danh sách nhà cung cấp');
                 setShowSuccessMessage(true);
             } finally {
                 setIsLoading(false);
@@ -88,9 +72,8 @@ function StaffShift() {
 
     // Khởi tạo dữ liệu
     useEffect(() => {
-        fetchStaffs();
-        fetchStaffShifts(1);
-    }, [fetchStaffs, fetchStaffShifts]);
+        fetchSuppliers(1);
+    }, [fetchSuppliers]);
 
     // Auto-hide success message after 3 seconds
     useEffect(() => {
@@ -108,8 +91,8 @@ function StaffShift() {
     // Call API when debounced search data changes
     useEffect(() => {
         setPageIndex(1);
-        fetchStaffShifts(1, debouncedSearchData);
-    }, [debouncedSearchData, fetchStaffShifts]);
+        fetchSuppliers(1, debouncedSearchData);
+    }, [debouncedSearchData, fetchSuppliers]);
 
     // Xử lý thay đổi input form
     const handleFormChange = (e) => {
@@ -129,61 +112,92 @@ function StaffShift() {
         }));
     };
 
-    // Mở form thêm ca làm việc
-    const handleAddShift = () => {
+    // Mở form thêm nhà cung cấp
+    const handleAddSupplier = () => {
+        setIsEditMode(false);
+        setEditingSupplierId(null);
         setFormData({
-            date: '',
-            startDate: '',
-            endDate: '',
+            supplierName: '',
+            address: '',
+            phone: '',
         });
         setIsFormVisible(true);
     };
 
-    // Gửi form (Thêm ca làm việc)
+    // Mở form sửa nhà cung cấp
+    const handleEditSupplier = (supplier) => {
+        setIsEditMode(true);
+        setEditingSupplierId(supplier.id);
+        setFormData({
+            supplierName: supplier.supplierName,
+            address: supplier.address || '',
+            phone: supplier.phone || '',
+        });
+        setIsFormVisible(true);
+    };
+
+    // Gửi form (Thêm hoặc Sửa)
     const handleSubmitForm = async (e) => {
         e.preventDefault();
 
         try {
             setIsLoading(true);
 
-            if (!formData.date) {
-                setSuccessMessage('Vui lòng chọn ngày');
+            if (!formData.supplierName) {
+                setSuccessMessage('Vui lòng nhập tên nhà cung cấp');
                 setShowSuccessMessage(true);
                 return;
             }
 
-            if (!formData.startDate) {
-                setSuccessMessage('Vui lòng chọn giờ bắt đầu');
+            if (!formData.address) {
+                setSuccessMessage('Vui lòng nhập địa chỉ');
                 setShowSuccessMessage(true);
                 return;
             }
 
-            if (!formData.endDate) {
-                setSuccessMessage('Vui lòng chọn giờ kết thúc');
+            if (!formData.phone) {
+                setSuccessMessage('Vui lòng nhập số điện thoại');
                 setShowSuccessMessage(true);
                 return;
             }
 
-            const staffIdFromStorage = localStorage.getItem('staffId');
-            if (!staffIdFromStorage) {
-                setSuccessMessage('Không tìm thấy ID nhân viên trong hệ thống');
-                setShowSuccessMessage(true);
-                return;
-            }
+            if (isEditMode) {
+                // Update supplier
+                const payload = {
+                    id: editingSupplierId,
+                    supplierName: formData.supplierName,
+                    address: formData.address,
+                    phone: formData.phone,
+                };
 
-            const payload = {
-                staffId: parseInt(staffIdFromStorage),
-                date: new Date(formData.date).toISOString(),
-                startDate: new Date(formData.startDate).toISOString(),
-                endDate: new Date(formData.endDate).toISOString(),
-            };
+                const response = await axios.post(`${API_BASE}/Supplier/update`, payload);
+                if (response.data === true) {
+                    setSuccessMessage('Cập nhật nhà cung cấp thành công!');
+                    setShowSuccessMessage(true);
+                    setIsFormVisible(false);
+                    fetchSuppliers(pageIndex, searchData);
+                } else {
+                    setSuccessMessage('Cập nhật nhà cung cấp thất bại');
+                    setShowSuccessMessage(true);
+                }
+            } else {
+                // Create supplier
+                const payload = {
+                    supplierName: formData.supplierName,
+                    address: formData.address,
+                    phone: formData.phone,
+                };
 
-            const response = await axios.post(`${API_BASE}/StaffShift/createstaffshift`, payload);
-            if (response.data) {
-                setSuccessMessage('Thêm ca làm việc thành công!');
-                setShowSuccessMessage(true);
-                setIsFormVisible(false);
-                fetchStaffShifts(1, searchData);
+                const response = await axios.post(`${API_BASE}/Supplier/create`, payload);
+                if (response.data === true) {
+                    setSuccessMessage('Thêm nhà cung cấp thành công!');
+                    setShowSuccessMessage(true);
+                    setIsFormVisible(false);
+                    fetchSuppliers(1);
+                } else {
+                    setSuccessMessage('Thêm nhà cung cấp thất bại');
+                    setShowSuccessMessage(true);
+                }
             }
         } catch (error) {
             console.error('Lỗi xử lý form:', error);
@@ -195,89 +209,80 @@ function StaffShift() {
     };
 
     // Select/Deselect checkbox
-    const handleSelectShift = (shiftId) => {
-        const newSelected = new Set(selectedShifts);
-        if (newSelected.has(shiftId)) {
-            newSelected.delete(shiftId);
+    const handleSelectSupplier = (supplierId) => {
+        const newSelected = new Set(selectedSuppliers);
+        if (newSelected.has(supplierId)) {
+            newSelected.delete(supplierId);
         } else {
-            newSelected.add(shiftId);
+            newSelected.add(supplierId);
         }
-        setSelectedShifts(newSelected);
+        setSelectedSuppliers(newSelected);
     };
 
     // Select all checkbox
     const handleSelectAll = () => {
-        if (selectedShifts.size === staffShifts.length) {
-            setSelectedShifts(new Set());
+        if (selectedSuppliers.size === suppliers.length) {
+            setSelectedSuppliers(new Set());
         } else {
-            setSelectedShifts(new Set(staffShifts.map((shift) => shift.id)));
+            setSelectedSuppliers(new Set(suppliers.map((s) => s.id)));
         }
     };
 
-    // Delete multiple shifts
+    // Delete multiple suppliers
     const handleDeleteMultiple = async () => {
-        if (selectedShifts.size === 0) {
-            setSuccessMessage('Vui lòng chọn ít nhất một ca để xóa');
+        if (selectedSuppliers.size === 0) {
+            setSuccessMessage('Vui lòng chọn ít nhất một nhà cung cấp để xóa');
             setShowSuccessMessage(true);
             return;
         }
 
-        if (selectedShifts.size > 1) {
-            setSuccessMessage('Chỉ có thể xóa 1 ca tại một lần');
+        if (selectedSuppliers.size > 1) {
+            setSuccessMessage('Chỉ có thể xóa 1 nhà cung cấp tại một lần');
             setShowSuccessMessage(true);
             return;
         }
 
-        if (!window.confirm('Bạn có chắc chắn muốn xóa ca làm việc đã chọn?')) {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa nhà cung cấp đã chọn?')) {
             return;
         }
 
         try {
             setIsLoading(true);
-            const deletePromises = Array.from(selectedShifts).map((id) =>
-                axios.post(`${API_BASE}/StaffShift/deletestaffshift`, { id }),
+            const deletePromises = Array.from(selectedSuppliers).map((id) =>
+                axios.post(`${API_BASE}/Supplier/delete`, { id }),
             );
-            await Promise.all(deletePromises);
-            setSuccessMessage('Xóa ca làm việc thành công!');
-            setShowSuccessMessage(true);
-            setSelectedShifts(new Set());
-            fetchStaffShifts(pageIndex, searchData);
+            const results = await Promise.all(deletePromises);
+
+            if (results.some((r) => r.data === true)) {
+                setSuccessMessage('Xóa nhà cung cấp thành công!');
+                setShowSuccessMessage(true);
+                setSelectedSuppliers(new Set());
+                fetchSuppliers(1);
+            } else {
+                setSuccessMessage('Xóa nhà cung cấp thất bại');
+                setShowSuccessMessage(true);
+            }
         } catch (error) {
-            console.error('Lỗi xóa ca làm việc:', error);
-            setSuccessMessage('Lỗi xóa ca làm việc');
+            console.error('Lỗi xóa nhà cung cấp:', error);
+            setSuccessMessage('Lỗi xóa nhà cung cấp');
             setShowSuccessMessage(true);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const getStatusName = (status) => {
-        if (status === 2) return 'Nghỉ';
-        return 'Đã phân công';
-    };
-
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN');
-    };
-
-    const formatTime = (timeString) => {
-        const date = new Date(timeString);
-        return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    };
-
     const totalPages = Math.ceil(totalRecordCount / pageSize);
 
-    if (!isLoading && staffShifts.length === 0 && totalRecordCount === 0) {
+    if (!isLoading && suppliers.length === 0 && totalRecordCount === 0) {
         return (
             <div className={cx('wrapper')}>
                 <SuccessMessage message={successMessage} isVisible={showSuccessMessage} />
                 <div className={cx('header')}>
-                    <h1>Quản Lý Ca Làm Việc</h1>
+                    <h1>Quản Lý Nhà Cung Cấp</h1>
                     <div className={cx('header-actions')}>
-                        <button className={cx('btn-primary')} onClick={handleAddShift}>
+                        <button className={cx('btn-primary')} onClick={handleAddSupplier}>
                             <FontAwesomeIcon icon={faPlus} />
-                            Thêm Ca Làm Việc
+                            Thêm Nhà Cung Cấp
                         </button>
                     </div>
                 </div>
@@ -295,21 +300,35 @@ function StaffShift() {
 
             {/* Header */}
             <div className={cx('header')}>
-                <h1>Quản Lý Ca Làm Việc</h1>
+                <h1>Quản Lý Nhà Cung Cấp</h1>
                 <div className={cx('header-actions')}>
-                    {selectedShifts.size === 1 && (
-                        <button
-                            className={cx('btn-delete-multiple')}
-                            onClick={handleDeleteMultiple}
-                            title="Xóa ca làm việc được chọn"
-                        >
-                            <FontAwesomeIcon icon={faTrash} />
-                            Xóa
-                        </button>
+                    {selectedSuppliers.size === 1 && (
+                        <>
+                            <button
+                                className={cx('btn-edit')}
+                                onClick={() => {
+                                    const selectedId = Array.from(selectedSuppliers)[0];
+                                    const supplier = suppliers.find((s) => s.id === selectedId);
+                                    if (supplier) handleEditSupplier(supplier);
+                                }}
+                                title="Sửa nhà cung cấp được chọn"
+                            >
+                                <FontAwesomeIcon icon={faEdit} />
+                                Sửa
+                            </button>
+                            <button
+                                className={cx('btn-delete-multiple')}
+                                onClick={handleDeleteMultiple}
+                                title="Xóa nhà cung cấp được chọn"
+                            >
+                                <FontAwesomeIcon icon={faTrash} />
+                                Xóa
+                            </button>
+                        </>
                     )}
-                    <button className={cx('btn-primary')} onClick={handleAddShift}>
+                    <button className={cx('btn-primary')} onClick={handleAddSupplier}>
                         <FontAwesomeIcon icon={faPlus} />
-                        Thêm Ca Làm Việc
+                        Thêm Nhà Cung Cấp
                     </button>
                 </div>
             </div>
@@ -326,16 +345,9 @@ function StaffShift() {
                 />
                 <input
                     type="text"
-                    name="staffId"
-                    placeholder="Tìm kiếm theo Staff ID..."
-                    value={searchData.staffId}
-                    onChange={handleSearchChange}
-                    className={cx('search-input')}
-                />
-                <input
-                    type="date"
-                    name="date"
-                    value={searchData.date}
+                    name="supplierName"
+                    placeholder="Tìm kiếm theo tên nhà cung cấp..."
+                    value={searchData.supplierName}
                     onChange={handleSearchChange}
                     className={cx('search-input')}
                 />
@@ -348,52 +360,41 @@ function StaffShift() {
                 </div>
             ) : (
                 <div className={cx('table-container')}>
-                    <table className={cx('shifts-table')}>
+                    <table className={cx('suppliers-table')}>
                         <thead>
                             <tr>
                                 <th>
                                     <input
                                         type="checkbox"
-                                        checked={selectedShifts.size === staffShifts.length && staffShifts.length > 0}
+                                        checked={selectedSuppliers.size === suppliers.length && suppliers.length > 0}
                                         onChange={handleSelectAll}
                                     />
                                 </th>
                                 <th>ID</th>
-                                <th>Mã Nhân Viên</th>
-                                <th>Ngày</th>
-                                <th>Giờ Bắt Đầu</th>
-                                <th>Giờ Kết Thúc</th>
-                                <th>Trạng Thái</th>
-                                <th>Hành Động</th>
+                                <th>Tên Nhà Cung Cấp</th>
+                                <th>Địa Chỉ</th>
+                                <th>Điện Thoại</th>
+                                <th>Email</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {staffShifts.map((shift) => (
-                                <tr key={shift.id} className={selectedShifts.has(shift.id) ? cx('selected') : ''}>
+                            {suppliers.map((supplier) => (
+                                <tr
+                                    key={supplier.id}
+                                    className={selectedSuppliers.has(supplier.id) ? cx('selected') : ''}
+                                >
                                     <td>
                                         <input
                                             type="checkbox"
-                                            checked={selectedShifts.has(shift.id)}
-                                            onChange={() => handleSelectShift(shift.id)}
+                                            checked={selectedSuppliers.has(supplier.id)}
+                                            onChange={() => handleSelectSupplier(supplier.id)}
                                         />
                                     </td>
-                                    <td>{shift.id}</td>
-                                    <td>{shift.staffId}</td>
-                                    <td>{formatDate(shift.date)}</td>
-                                    <td>{formatTime(shift.startDate)}</td>
-                                    <td>{formatTime(shift.endDate)}</td>
-                                    <td>{getStatusName(shift.status)}</td>
-                                    <td className={cx('action-buttons')}>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedShifts(new Set([shift.id]));
-                                                handleDeleteMultiple();
-                                            }}
-                                            title="Xóa"
-                                        >
-                                            <FontAwesomeIcon icon={faTrash} />
-                                        </button>
-                                    </td>
+                                    <td>{supplier.id}</td>
+                                    <td>{supplier.supplierName}</td>
+                                    <td>{supplier.address || '-'}</td>
+                                    <td>{supplier.phone || '-'}</td>
+                                    <td>{supplier.email || '-'}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -404,7 +405,7 @@ function StaffShift() {
             {/* Pagination */}
             {totalPages > 1 && (
                 <div className={cx('pagination')}>
-                    <button disabled={pageIndex === 1} onClick={() => fetchStaffShifts(pageIndex - 1, searchData)}>
+                    <button disabled={pageIndex === 1} onClick={() => fetchSuppliers(pageIndex - 1, searchData)}>
                         Trang Trước
                     </button>
                     <span>
@@ -412,7 +413,7 @@ function StaffShift() {
                     </span>
                     <button
                         disabled={pageIndex === totalPages}
-                        onClick={() => fetchStaffShifts(pageIndex + 1, searchData)}
+                        onClick={() => fetchSuppliers(pageIndex + 1, searchData)}
                     >
                         Trang Sau
                     </button>
@@ -424,7 +425,7 @@ function StaffShift() {
                 <div className={cx('modal-overlay')}>
                     <div className={cx('modal-content')}>
                         <div className={cx('modal-header')}>
-                            <h2>Thêm Ca Làm Việc</h2>
+                            <h2>{isEditMode ? 'Sửa Nhà Cung Cấp' : 'Thêm Nhà Cung Cấp'}</h2>
                             <button className={cx('btn-close')} onClick={() => setIsFormVisible(false)}>
                                 <FontAwesomeIcon icon={faTimes} />
                             </button>
@@ -432,33 +433,33 @@ function StaffShift() {
 
                         <form className={cx('form')} onSubmit={handleSubmitForm}>
                             <div className={cx('form-group')}>
-                                <label>Ngày Làm Việc *</label>
+                                <label>Tên Nhà Cung Cấp *</label>
                                 <input
-                                    type="date"
-                                    name="date"
-                                    value={formData.date}
+                                    type="text"
+                                    name="supplierName"
+                                    value={formData.supplierName}
                                     onChange={handleFormChange}
                                     required
                                 />
                             </div>
 
                             <div className={cx('form-group')}>
-                                <label>Giờ Bắt Đầu *</label>
+                                <label>Địa Chỉ *</label>
                                 <input
-                                    type="datetime-local"
-                                    name="startDate"
-                                    value={formData.startDate}
+                                    type="text"
+                                    name="address"
+                                    value={formData.address}
                                     onChange={handleFormChange}
                                     required
                                 />
                             </div>
 
                             <div className={cx('form-group')}>
-                                <label>Giờ Kết Thúc *</label>
+                                <label>Điện Thoại *</label>
                                 <input
-                                    type="datetime-local"
-                                    name="endDate"
-                                    value={formData.endDate}
+                                    type="text"
+                                    name="phone"
+                                    value={formData.phone}
                                     onChange={handleFormChange}
                                     required
                                 />
@@ -484,4 +485,4 @@ function StaffShift() {
     );
 }
 
-export default StaffShift;
+export default Supplier;

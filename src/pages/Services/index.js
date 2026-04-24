@@ -578,6 +578,7 @@ function Services() {
                                         title="Chọn tất cả"
                                     />
                                 </th>
+                                <th>ID</th>
                                 <th>Hình Ảnh</th>
                                 <th>Tên Dịch Vụ</th>
                                 <th>Loại Dịch Vụ</th>
@@ -597,6 +598,7 @@ function Services() {
                                             onChange={() => handleSelectService(service.id)}
                                         />
                                     </td>
+                                    <td>{service.id}</td>
                                     <td className={cx('image-cell')}>
                                         {service.serviceImage ? (
                                             <img

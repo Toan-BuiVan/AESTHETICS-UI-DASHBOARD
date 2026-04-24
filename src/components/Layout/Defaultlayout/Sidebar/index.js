@@ -12,6 +12,7 @@ import {
     faClinicMedical,
     faComment,
     faComputer,
+    faCog,
     faFileInvoiceDollar,
     faHouseMedicalFlag,
     faLock,
@@ -27,6 +28,9 @@ import {
     faUserTag,
     faUsers,
     faClock,
+    faList,
+    faTruck,
+    faUndoAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -126,12 +130,32 @@ function Sidebar() {
                                 <a href="/services">Dịch Vụ</a>
                             </li>
                             <li>
+                                <FontAwesomeIcon icon={faList} />
+                                <a href="/service-type">Loại Dịch Vụ</a>
+                            </li>
+                            <li>
                                 <FontAwesomeIcon icon={faFileInvoiceDollar} />
                                 <a href="/invoice">Hóa Đơn</a>
                             </li>
                             <li>
+                                <FontAwesomeIcon icon={faUndoAlt} />
+                                <a href="/refund">Quản Lý Hoàn Tiền</a>
+                            </li>
+                            <li>
                                 <FontAwesomeIcon icon={faBox} />
                                 <a href="/products">Sản Phẩm</a>
+                            </li>
+                            <li>
+                                <FontAwesomeIcon icon={faCartShopping} />
+                                <a href="/session-product">Sản Phẩm Sử Dụng</a>
+                            </li>
+                            <li>
+                                <FontAwesomeIcon icon={faCalendarCheck} />
+                                <a href="/treatment-plan">Dịch Vụ Liệu Trình</a>
+                            </li>
+                            <li>
+                                <FontAwesomeIcon icon={faTruck} />
+                                <a href="/supplier">Nhà Cung Cấp</a>
                             </li>
                             <li>
                                 <FontAwesomeIcon icon={faTags} />
@@ -150,6 +174,10 @@ function Sidebar() {
                                 <a href="/clinic-staff">Nhân Viên Phòng Khám</a>
                             </li>
                             <li>
+                                <FontAwesomeIcon icon={faCog} />
+                                <a href="/equipment">Quản Lý Thiết Bị</a>
+                            </li>
+                            <li>
                                 <FontAwesomeIcon icon={faUserTag} />
                                 <a href="/staff">Quản Lý Nhân Viên</a>
                             </li>
@@ -164,6 +192,10 @@ function Sidebar() {
                             <li>
                                 <FontAwesomeIcon icon={faLock} />
                                 <a href="/appointment-time-lock">Khóa Thời Gian</a>
+                            </li>
+                            <li>
+                                <FontAwesomeIcon icon={faCalendarPlus} />
+                                <a href="/appointments">Quản Lý Đặt Lịch</a>
                             </li>
                             <li>
                                 <FontAwesomeIcon icon={faSignOut} />

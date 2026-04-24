@@ -18,6 +18,8 @@ function Profile() {
     const [showEditModal, setShowEditModal] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editFormData, setEditFormData] = useState({});
+    const [imagePreview, setImagePreview] = useState('');
+    const [newImageFile, setNewImageFile] = useState(null);
 
     const accountId = localStorage.getItem('userID');
 
@@ -56,7 +58,28 @@ function Profile() {
 
     const handleEditClick = () => {
         setEditFormData({ ...profileData });
+        if (profileData.staffImage) {
+            setImagePreview(`http://localhost:5122/Images/${profileData.staffImage}`);
+        }
+        setNewImageFile(null);
         setShowEditModal(true);
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setNewImageFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+                // Lưu base64 vào editFormData để gửi lên API
+                setEditFormData({
+                    ...editFormData,
+                    staffImage: reader.result,
+                });
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleInputChange = (field, value) => {
@@ -125,10 +148,6 @@ function Profile() {
         }
     };
 
-    const isFieldEmpty = (value) => {
-        return value === null || value === undefined || value === '' || value === 'N/A';
-    };
-
     if (!accountId) {
         return (
             <div className={cx('wrapper')}>
@@ -145,7 +164,7 @@ function Profile() {
                 <div className={cx('header')}>
                     <div className={cx('header-content')}>
                         <h1>Hồ Sơ Người Dùng</h1>
-                        {profileData && <p className={cx('subtitle')}>{profileData.userName}</p>}
+                        {profileData && <p className={cx('subtitle')}>Tài khoản: {profileData.userName}</p>}
                     </div>
                     {profileData && (
                         <button className={cx('btn-edit')} onClick={handleEditClick}>
@@ -157,173 +176,146 @@ function Profile() {
                 {isLoading ? (
                     <div className={cx('loading')}>Đang tải hồ sơ...</div>
                 ) : profileData ? (
-                    <div className={cx('content')}>
-                        {/* Card Chính */}
-                        <div className={cx('main-info')}>
-                            <div className={cx('info-row')}>
-                                <div className={cx('info-col')}>
-                                    <span className={cx('label')}>Tài Khoản:</span>
-                                    <span className={cx('value')}>{profileData.accountId}</span>
-                                </div>
-                                <div className={cx('info-col')}>
-                                    <span className={cx('label')}>Username:</span>
-                                    <span className={cx('value')}>{profileData.userName}</span>
-                                </div>
-                                <div className={cx('info-col')}>
-                                    <span className={cx('label')}>Ngày Tạo:</span>
-                                    <span className={cx('value')}>{formatDate(profileData.creationDate)}</span>
-                                </div>
-                                <div className={cx('info-col')}>
-                                    <span className={cx('label')}>Trạng Thái:</span>
-                                    <span className={cx('status', { active: !profileData.isDeleted })}>
-                                        {profileData.isDeleted ? 'Đã xóa' : 'Hoạt động'}
-                                    </span>
+                    <div className={cx('cv-container')}>
+                        {/* CV Main Layout */}
+                        <div className={cx('cv-wrapper')}>
+                            {/* Left Sidebar - Photo */}
+                            <div className={cx('cv-sidebar')}>
+                                <div className={cx('photo-box')}>
+                                    {profileData.staffImage ? (
+                                        <img
+                                            src={`http://localhost:5122/Images/${profileData.staffImage}`}
+                                            alt="Profile"
+                                            className={cx('profile-photo')}
+                                        />
+                                    ) : (
+                                        <div className={cx('photo-placeholder')}>
+                                            <span>Không có ảnh</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Thông Tin Cá Nhân */}
-                        <div className={cx('section')}>
-                            <h3>Thông Tin Cá Nhân</h3>
-                            <div className={cx('info-rows')}>
-                                <div className={cx('info-row')}>
-                                    <div className={cx('info-col')}>
-                                        <span className={cx('label')}>Họ Tên:</span>
-                                        <span className={cx('value', { empty: isFieldEmpty(profileData.fullName) })}>
-                                            {profileData.fullName || '—'}
-                                        </span>
-                                    </div>
-                                    <div className={cx('info-col')}>
-                                        <span className={cx('label')}>Email:</span>
-                                        <span className={cx('value', { empty: isFieldEmpty(profileData.email) })}>
-                                            {profileData.email || '—'}
-                                        </span>
-                                    </div>
-                                    <div className={cx('info-col')}>
-                                        <span className={cx('label')}>SĐT:</span>
-                                        <span className={cx('value', { empty: isFieldEmpty(profileData.phone) })}>
-                                            {profileData.phone || '—'}
-                                        </span>
-                                    </div>
+                            {/* Right Content - CV Info */}
+                            <div className={cx('cv-content')}>
+                                {/* Header Section */}
+                                <div className={cx('cv-header')}>
+                                    <h1>{profileData.fullName || profileData.userName}</h1>
+                                    {profileData.isDoctor && profileData.degree && (
+                                        <p className={cx('cv-title')}>
+                                            {profileData.degree} - {profileData.specialization}
+                                        </p>
+                                    )}
                                 </div>
-                                <div className={cx('info-row')}>
-                                    <div className={cx('info-col')}>
-                                        <span className={cx('label')}>Ngày Sinh:</span>
-                                        <span className={cx('value')}>{formatDate(profileData.dateBirth)}</span>
-                                    </div>
-                                    <div className={cx('info-col')}>
-                                        <span className={cx('label')}>Giới Tính:</span>
-                                        <span className={cx('value', { empty: isFieldEmpty(profileData.sex) })}>
-                                            {profileData.sex || '—'}
-                                        </span>
-                                    </div>
-                                    <div className={cx('info-col')}>
-                                        <span className={cx('label')}>CCCD:</span>
-                                        <span className={cx('value', { empty: isFieldEmpty(profileData.idCard) })}>
-                                            {profileData.idCard || '—'}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className={cx('info-row', 'fullwidth')}>
-                                    <div className={cx('info-col', 'fullwidth')}>
-                                        <span className={cx('label')}>Địa Chỉ:</span>
-                                        <span className={cx('value', { empty: isFieldEmpty(profileData.address) })}>
-                                            {profileData.address || '—'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Thông Tin Bác Sĩ/Nhân Viên */}
-                        {profileData.isDoctor && (
-                            <div className={cx('section')}>
-                                <h3>Thông Tin Nhân Viên</h3>
-                                <div className={cx('info-rows')}>
-                                    <div className={cx('info-row')}>
-                                        <div className={cx('info-col')}>
-                                            <span className={cx('label')}>Bằng Cấp:</span>
-                                            <span className={cx('value', { empty: isFieldEmpty(profileData.degree) })}>
-                                                {profileData.degree || '—'}
-                                            </span>
-                                        </div>
-                                        <div className={cx('info-col')}>
-                                            <span className={cx('label')}>Chuyên Ngành:</span>
-                                            <span
-                                                className={cx('value', {
-                                                    empty: isFieldEmpty(profileData.specialization),
-                                                })}
-                                            >
-                                                {profileData.specialization || '—'}
-                                            </span>
-                                        </div>
-                                        <div className={cx('info-col')}>
-                                            <span className={cx('label')}>Số Chứng Chỉ:</span>
-                                            <span
-                                                className={cx('value', {
-                                                    empty: isFieldEmpty(profileData.licenseNumber),
-                                                })}
-                                            >
-                                                {profileData.licenseNumber || '—'}
-                                            </span>
-                                        </div>
+                                {/* Contact Information */}
+                                <div className={cx('cv-section')}>
+                                    <h3 className={cx('section-title')}>THÔNG TIN LIÊN HỆ</h3>
+                                    <div className={cx('contact-info')}>
+                                        <p>
+                                            <strong>Email:</strong> {profileData.email || 'N/A'}
+                                        </p>
+                                        <p>
+                                            <strong>Điện thoại:</strong> {profileData.phone || 'N/A'}
+                                        </p>
+                                        <p>
+                                            <strong>Địa chỉ:</strong> {profileData.address || 'N/A'}
+                                        </p>
                                     </div>
-                                    <div className={cx('info-row')}>
-                                        <div className={cx('info-col')}>
-                                            <span className={cx('label')}>Kinh Nghiệm:</span>
-                                            <span className={cx('value')}>{profileData.experienceYears || 0} năm</span>
-                                        </div>
-                                        <div className={cx('info-col')}>
-                                            <span className={cx('label')}>Trình Độ:</span>
-                                            <span className={cx('value')}>{profileData.doctorLevel || 0}</span>
-                                        </div>
-                                        <div className={cx('info-col')}>
-                                            <span className={cx('label')}>Trạng Thái:</span>
-                                            <span className={cx('value')}>
+                                </div>
+
+                                {/* Personal Information */}
+                                <div className={cx('cv-section')}>
+                                    <h3 className={cx('section-title')}>THÔNG TIN CÁ NHÂN</h3>
+                                    <div className={cx('info-grid')}>
+                                        <p>
+                                            <strong>Giới tính:</strong> {profileData.sex || 'N/A'}
+                                        </p>
+                                        <p>
+                                            <strong>Ngày sinh:</strong> {formatDate(profileData.dateBirth)}
+                                        </p>
+                                        <p>
+                                            <strong>CCCD/CMND:</strong> {profileData.idCard || 'N/A'}
+                                        </p>
+                                        <p>
+                                            <strong>Username:</strong> {profileData.userName}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Professional Information (if doctor/staff) */}
+                                {profileData.isDoctor && (
+                                    <div className={cx('cv-section')}>
+                                        <h3 className={cx('section-title')}>THÔNG TIN CHUYÊN MÔN</h3>
+                                        <div className={cx('info-grid')}>
+                                            <p>
+                                                <strong>Bằng cấp:</strong> {profileData.degree || 'N/A'}
+                                            </p>
+                                            <p>
+                                                <strong>Chuyên ngành:</strong> {profileData.specialization || 'N/A'}
+                                            </p>
+                                            <p>
+                                                <strong>Số chứng chỉ:</strong> {profileData.licenseNumber || 'N/A'}
+                                            </p>
+                                            <p>
+                                                <strong>Kinh nghiệm:</strong> {profileData.experienceYears || 0} năm
+                                            </p>
+                                            <p>
+                                                <strong>Trình độ:</strong> Level {profileData.doctorLevel || 0}
+                                            </p>
+                                            <p>
+                                                <strong>Trạng thái:</strong>{' '}
                                                 {profileData.employmentStatus === 0
                                                     ? 'Đang làm'
                                                     : profileData.employmentStatus === 1
                                                       ? 'Nghỉ'
                                                       : 'Khác'}
-                                            </span>
+                                            </p>
                                         </div>
+                                        {profileData.biography && (
+                                            <div className={cx('biography-section')}>
+                                                <strong>Tiểu sử:</strong>
+                                                <p>{profileData.biography}</p>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className={cx('info-row', 'fullwidth')}>
-                                        <div className={cx('info-col', 'fullwidth')}>
-                                            <span className={cx('label')}>Tiểu Sử:</span>
-                                            <span
-                                                className={cx('value', { empty: isFieldEmpty(profileData.biography) })}
-                                            >
-                                                {profileData.biography || '—'}
+                                )}
+
+                                {/* Account Information */}
+                                <div className={cx('cv-section')}>
+                                    <h3 className={cx('section-title')}>THÔNG TIN TÀI KHOẢN</h3>
+                                    <div className={cx('info-grid')}>
+                                        <p>
+                                            <strong>ID Tài khoản:</strong> {profileData.accountId}
+                                        </p>
+                                        <p>
+                                            <strong>Ngày tạo:</strong> {formatDate(profileData.creationDate)}
+                                        </p>
+                                        <p>
+                                            <strong>Trạng thái:</strong>{' '}
+                                            <span className={cx('status-badge', { active: !profileData.isDeleted })}>
+                                                {profileData.isDeleted ? 'Đã xóa' : 'Hoạt động'}
                                             </span>
-                                        </div>
+                                        </p>
                                     </div>
                                 </div>
-                            </div>
-                        )}
 
-                        {/* Thông Tin Điểm */}
-                        <div className={cx('section')}>
-                            <h3>Điểm & Hạng Thành Viên</h3>
-                            <div className={cx('info-rows')}>
-                                <div className={cx('info-row')}>
-                                    <div className={cx('info-col')}>
-                                        <span className={cx('label')}>Điểm Tích Lũy:</span>
-                                        <span className={cx('value')}>{profileData.accumulatedPoints || 0}</span>
-                                    </div>
-                                    <div className={cx('info-col')}>
-                                        <span className={cx('label')}>Điểm Đánh Giá:</span>
-                                        <span className={cx('value')}>{profileData.ratingPoints || 0}</span>
-                                    </div>
-                                    <div className={cx('info-col')}>
-                                        <span className={cx('label')}>Điểm Bán Hàng:</span>
-                                        <span className={cx('value')}>{profileData.salesPoints || 0}</span>
-                                    </div>
-                                    <div className={cx('info-col')}>
-                                        <span className={cx('label')}>Hạng Thành Viên:</span>
-                                        <span className={cx('value', { empty: isFieldEmpty(profileData.rankMember) })}>
-                                            {profileData.rankMember || '—'}
-                                        </span>
+                                {/* Points Information */}
+                                <div className={cx('cv-section')}>
+                                    <h3 className={cx('section-title')}>ĐIỂM VÀ HẠNG THÀNH VIÊN</h3>
+                                    <div className={cx('info-grid')}>
+                                        <p>
+                                            <strong>Điểm tích lũy:</strong> {profileData.accumulatedPoints || 0}
+                                        </p>
+                                        <p>
+                                            <strong>Điểm đánh giá:</strong> {profileData.ratingPoints || 0}
+                                        </p>
+                                        <p>
+                                            <strong>Điểm bán hàng:</strong> {profileData.salesPoints || 0}
+                                        </p>
+                                        <p>
+                                            <strong>Hạng thành viên:</strong> {profileData.rankMember || 'N/A'}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -346,6 +338,22 @@ function Profile() {
                         </div>
                         <div className={cx('modal-body')}>
                             <div className={cx('form-grid')}>
+                                {/* Hình Ảnh */}
+                                <div className={cx('form-group', 'col-full')}>
+                                    <label>Hình Ảnh Nhân Viên</label>
+                                    {imagePreview && (
+                                        <div className={cx('image-preview-container')}>
+                                            <img src={imagePreview} alt="Preview" className={cx('image-preview')} />
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        className={cx('file-input')}
+                                    />
+                                </div>
+
                                 {/* Họ Tên */}
                                 <div className={cx('form-group')}>
                                     <label>Họ Tên *</label>

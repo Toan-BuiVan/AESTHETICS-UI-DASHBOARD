@@ -6,10 +6,15 @@ import styles from './SuccessMessage.scss';
 
 const cx = classNames.bind(styles);
 
-function SuccessMessage({ message }) {
-    const displayMessage = message || 'Đang tải...';
+function SuccessMessage({ message, isVisible }) {
+    const displayMessage = message || ' ';
+    
+    if (!isVisible) {
+        return null;
+    }
+
     return (
-        <div className={cx('success')}>
+        <div className={cx('success', isVisible ? 'show' : 'hide')}>
             <div className={cx('content-success')}>
                 <FontAwesomeIcon className={cx('succes-icon')} icon={faCheckCircle} />
                 <h4>{displayMessage}</h4>

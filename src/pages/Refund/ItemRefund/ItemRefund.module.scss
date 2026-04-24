@@ -6,91 +6,8 @@
     padding: 20px;
 }
 
-/* Bulk Actions */
-.bulk-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 15px 20px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.selection-info {
-    font-weight: 600;
-    color: #495057;
-    flex: 1;
-}
-
-.btn-bulk-delete {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-
-    &:hover:not(:disabled) {
-        background-color: #5a6268;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    &.active {
-        background-color: #dc3545;
-
-        &:hover:not(:disabled) {
-            background-color: #c82333;
-        }
-    }
-
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-}
-
-.btn-cancel-selection {
-    padding: 10px 14px;
-    background-color: #e9ecef;
-    color: #495057;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s ease;
-
-    &:hover:not(:disabled) {
-        background-color: #dee2e6;
-    }
-
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-}
-
 /* Table Styles */
-.invoice-table {
+.refund-table {
     width: 100%;
     border-collapse: collapse;
     background-color: #fff;
@@ -99,14 +16,14 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.invoice-table th,
-.invoice-table td {
+.refund-table th,
+.refund-table td {
     border: 1px solid #dee2e6;
     padding: 12px 15px;
     text-align: left;
 }
 
-.invoice-table th {
+.refund-table th {
     background-color: #9dbfe0;
     font-weight: 600;
     color: #fff;
@@ -138,7 +55,7 @@
     }
 }
 
-.invoice-id {
+.refund-id {
     font-weight: 600;
     color: #2c3e50;
 }
@@ -149,35 +66,38 @@
     white-space: nowrap;
 }
 
+.badge-method {
+    display: inline-block;
+    padding: 6px 12px;
+    background-color: #e7f3ff;
+    color: #0066cc;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.reason {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #495057;
+}
+
 .status-badge {
     display: inline-block;
     padding: 6px 12px;
     border-radius: 20px;
     font-weight: 500;
     font-size: 12px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
 
-    &.status-active,
-    &.status-Active {
-        background-color: #d4edda;
-        color: #155724;
+    &:hover {
+        opacity: 0.8;
     }
-
-    &.status-inactive,
-    &.status-Inactive {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-    &.status-pending,
-    &.status-Pending {
-        background-color: #fff3cd;
-        color: #856404;
-    }
-}
-
-.order-status {
-    font-weight: 500;
-    color: #495057;
 }
 
 .status-display {
@@ -218,14 +138,9 @@
     font-size: 13px;
     transition: all 0.2s ease;
 
-    &:hover:not(:disabled) {
+    &:hover {
         background-color: #0052a3;
         transform: scale(1.05);
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
     }
 }
 
@@ -239,14 +154,9 @@
     font-size: 13px;
     transition: all 0.2s ease;
 
-    &:hover:not(:disabled) {
+    &:hover {
         background-color: #218838;
         transform: scale(1.05);
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
     }
 }
 
@@ -260,14 +170,9 @@
     font-size: 13px;
     transition: all 0.2s ease;
 
-    &:hover:not(:disabled) {
+    &:hover {
         background-color: #c82333;
         transform: scale(1.05);
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
     }
 }
 
@@ -280,7 +185,7 @@
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 100;
-    min-width: 200px;
+    min-width: 180px;
     margin-top: 4px;
 }
 
@@ -352,15 +257,6 @@
     }
 }
 
-.btn-delete {
-    background-color: #ffe7e7;
-    color: #dc3545;
-
-    &:hover:not(:disabled) {
-        background-color: #ffcccc;
-    }
-}
-
 /* Details */
 .detail-row {
     background-color: #f8f9fa;
@@ -377,43 +273,59 @@
     font-weight: 600;
 }
 
-.details-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
 }
 
-.details-table th,
-.details-table td {
-    border: 1px solid #dee2e6;
-    padding: 10px 12px;
-    text-align: left;
-    font-size: 13px;
-}
-
-.details-table th {
-    // background-color: #e9ecef;
-    font-weight: 600;
-}
-
-.details-table td {
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
     background-color: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+
+    &.full-width {
+        // grid-column: 1 / -1;
+    }
 }
 
-.details-table tr:hover {
-    background-color: #f8f9fa;
+.detail-item .label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.detail-item .value {
+    color: #2c3e50;
+    font-size: 14px;
+    word-break: break-word;
+
+    &.currency {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &.status-badge {
+        display: inline-block;
+        width: fit-content;
+    }
 }
 
 /* Responsive */
 @media (max-width: 1200px) {
-    .invoice-table th,
-    .invoice-table td {
+    .refund-table th,
+    .refund-table td {
         padding: 10px 8px;
         font-size: 13px;
     }
 
-    .bulk-actions {
-        flex-wrap: wrap;
+    .reason {
+        max-width: 150px;
     }
 }
 
@@ -422,14 +334,18 @@
         padding: 10px;
     }
 
-    .invoice-table th,
-    .invoice-table td {
+    .refund-table th,
+    .refund-table td {
         padding: 8px 6px;
         font-size: 12px;
     }
 
     .currency {
         font-size: 11px;
+    }
+
+    .reason {
+        max-width: 100px;
     }
 
     .actions {
@@ -441,14 +357,7 @@
         }
     }
 
-    .bulk-actions {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .btn-bulk-delete,
-    .btn-cancel-selection {
-        width: 100%;
+    .details-grid {
+        grid-template-columns: 1fr;
     }
 }

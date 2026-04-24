@@ -1,0 +1,301 @@
+.wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.appointments-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+
+    thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+
+        th {
+            padding: 15px;
+            text-align: left;
+            border: none;
+            font-weight: 600;
+        }
+    }
+
+    tbody {
+        tr {
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+
+            &:hover {
+                background: #f9f9f9;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+        }
+
+        td {
+            padding: 15px;
+            vertical-align: top;
+            color: #333;
+        }
+    }
+}
+
+.appointment-id {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.customer-info {
+    .name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 3px;
+    }
+
+    .phone {
+        font-size: 12px;
+        color: #999;
+    }
+}
+
+.staff-name {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.service-name {
+    color: #555;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.appointment-time {
+    font-size: 13px;
+
+    .start-time {
+        color: #333;
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+
+    .end-time {
+        color: #999;
+        font-size: 12px;
+    }
+}
+
+.price {
+    font-weight: 600;
+    color: #e74c3c;
+}
+
+// Status styling
+.status {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &.status-Booked {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    &.status-InProgress {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    &.status-Completed {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    &.status-Cancelled {
+        background: #f8d7da;
+        color: #842029;
+    }
+}
+
+.status-select {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #333;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+}
+
+// Payment status styling
+.payment-status {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+
+    &.payment-0 {
+        background: #ffe0e0;
+        color: #c0392b;
+    }
+
+    &.payment-1 {
+        background: #55efc4;
+        color: #00b894;
+    }
+
+    &.payment-2 {
+        background: #ffeaa7;
+        color: #d63031;
+    }
+}
+
+// Action buttons
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+
+    button {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+
+        &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        &:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    }
+}
+
+.btn-edit {
+    background: #3498db;
+    color: white;
+
+    &:hover {
+        background: #2980b9;
+    }
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+
+    &:hover {
+        background: #c0392b;
+    }
+}
+
+.btn-save {
+    background: #27ae60;
+    color: white;
+
+    &:hover {
+        background: #229954;
+    }
+}
+
+.btn-cancel-edit {
+    background: #95a5a6;
+    color: white;
+
+    &:hover {
+        background: #7f8c8d;
+    }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .appointments-table {
+        font-size: 13px;
+
+        th,
+        td {
+            padding: 12px;
+        }
+    }
+
+    .service-name {
+        max-width: 100px;
+    }
+
+    .appointment-time {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .wrapper {
+        overflow-x: auto;
+
+        &::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+
+            &:hover {
+                background: #555;
+            }
+        }
+    }
+
+    .appointments-table {
+        font-size: 12px;
+        min-width: 900px;
+
+        thead th {
+            padding: 10px;
+        }
+
+        tbody td {
+            padding: 10px;
+        }
+    }
+
+    .action-buttons {
+        button {
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+        }
+    }
+}
