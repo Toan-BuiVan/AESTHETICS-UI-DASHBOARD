@@ -303,15 +303,15 @@ function Products() {
 
     // Xuất Excel
     const handleExportExcel = async () => {
-        if (products.length === 0) {
-            setSuccessMessage('Không có sản phẩm để xuất');
+        if (selectedProducts.size === 0) {
+            setSuccessMessage('Vui lòng chọn sản phẩm để xuất');
             setShowSuccessMessage(true);
             return;
         }
 
         try {
             setIsLoading(true);
-            const productIds = products.map((p) => p.id);
+            const productIds = Array.from(selectedProducts);
             const response = await axios.post(`${API_BASE}/Product/exportproducttoexcel`, {
                 productIds,
             });
@@ -368,10 +368,10 @@ function Products() {
                             Xóa ({selectedProducts.size})
                         </button>
                     )}
-                    <button className={cx('btn-export')} onClick={handleExportExcel}>
+                    {/* <button className={cx('btn-export')} onClick={handleExportExcel}>
                         <FontAwesomeIcon icon={faDownload} />
                         Xuất Excel
-                    </button>
+                    </button> */}
                 </div>
             </div>
 

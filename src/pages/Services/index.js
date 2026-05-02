@@ -449,15 +449,16 @@ function Services() {
 
     // Xuất Excel
     const handleExportExcel = async () => {
-        if (services.length === 0) {
-            setSuccessMessage('Không có dịch vụ để xuất');
+        if (selectedServices.size === 0) {
+            setSuccessMessage('Vui lòng chọn ít nhất một dịch vụ để xuất');
             setShowSuccessMessage(true);
             return;
         }
 
         try {
             setIsLoading(true);
-            const serviceIds = services.map((s) => s.id);
+            // Chỉ xuất những dịch vụ được chọn
+            const serviceIds = Array.from(selectedServices);
             const response = await axios.post(
                 `${API_BASE}/Service/exportservicetoexcel`,
                 { serviceIds },
@@ -516,9 +517,14 @@ function Services() {
                             Xóa ({selectedServices.size})
                         </button>
                     )}
-                    <button className={cx('btn-export')} onClick={handleExportExcel}>
+                    <button 
+                        className={cx('btn-export')} 
+                        onClick={handleExportExcel}
+                        disabled={selectedServices.size === 0}
+                        title={selectedServices.size === 0 ? 'Vui lòng chọn dịch vụ trước' : 'Xuất các dịch vụ được chọn'}
+                    >
                         <FontAwesomeIcon icon={faDownload} />
-                        Xuất Excel
+                        Xuất Excel ({selectedServices.size})
                     </button>
                 </div>
             </div>

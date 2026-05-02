@@ -3,7 +3,7 @@ import axios from 'axios';
 import styles from './ItemInvoice.module.scss';
 import classNames from 'classnames/bind';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCaretDown, faTrash, faEdit, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faCaretDown, faEdit, faSave, faTimes, faBox, faCheck, faCircleXmark } from '@fortawesome/free-solid-svg-icons';
 
 const cx = classNames.bind(styles);
 const API_BASE = 'http://localhost:5122/api';
@@ -112,43 +112,41 @@ function ItemInvoice({ invoices, onDeleteSuccess, onStatusUpdate }) {
         }
     };
 
-    // Xử lý xóa tất cả các hóa đơn được chọn
-    const handleBulkDelete = async () => {
-        if (selectedCount === 0) return;
-        if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedCount} hóa đơn này?`)) {
+    // Xử lý tạo đơn hàng vận chuyển
+    const handleCreateShippingOrders = async () => {
+        if (selectedCount === 0) {
+            alert('Vui lòng chọn ít nhất 1 hóa đơn');
             return;
         }
 
         try {
             setIsLoading(true);
-            // Xóa từng hóa đơn (có thể tối ưu với batch delete API nếu có)
-            await Promise.all(Array.from(selectedInvoiceIds).map((invoiceId) => handleDeleteInvoice(invoiceId, true)));
+            const payload = {
+                invoiceIds: Array.from(selectedInvoiceIds),
+            };
 
-            if (onDeleteSuccess) {
-                onDeleteSuccess(`Đã xóa thành công ${selectedCount} hóa đơn`);
-            }
-            setSelectedInvoiceIds(new Set());
-        } catch (error) {
-            console.error('Lỗi khi xóa hóa đơn:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+            const response = await axios.post(`${API_BASE}/GHN/create-shipping-orders`, payload);
 
-    const handleDeleteInvoice = async (invoiceId, isSilent = false) => {
-        if (!isSilent && !window.confirm('Bạn có chắc chắn muốn xóa hóa đơn này?')) {
-            return;
-        }
+            if (response.data) {
+                const { successCount, failureCount, totalCount } = response.data;
+                let message = `Tạo đơn hàng thành công: ${successCount}/${totalCount}`;
 
-        try {
-            setIsLoading(true);
-            // Note: Delete endpoint may not be provided, add when available
-            // For now, we'll just remove from local state
-            if (!isSilent && onDeleteSuccess) {
-                onDeleteSuccess('Xóa hóa đơn thành công');
+                if (failureCount > 0) {
+                    message += ` (Thất bại: ${failureCount})`;
+                }
+
+                if (onDeleteSuccess) {
+                    onDeleteSuccess(message);
+                }
+
+                // Refresh data
+                if (onStatusUpdate) {
+                    onStatusUpdate();
+                }
             }
         } catch (error) {
-            console.error('Lỗi khi xóa hóa đơn:', error);
+            console.error('Lỗi khi tạo đơn hàng vận chuyển:', error);
+            alert('Lỗi: ' + (error.response?.data?.message || error.message));
         } finally {
             setIsLoading(false);
         }
@@ -160,20 +158,20 @@ function ItemInvoice({ invoices, onDeleteSuccess, onStatusUpdate }) {
 
     return (
         <div className={cx('wrapper')}>
-            {/* Master Delete Button */}
+            {/* Bulk Actions */}
             {selectedCount > 0 && (
                 <div className={cx('bulk-actions')}>
                     <span className={cx('selection-info')}>Đã chọn {selectedCount} hóa đơn</span>
                     <button
-                        className={cx('btn-bulk-delete', {
-                            active: selectedCount >= 2,
-                        })}
-                        onClick={handleBulkDelete}
-                        disabled={isLoading}
-                        title={selectedCount < 2 ? 'Chọn ít nhất 2 hóa đơn để xóa' : 'Xóa các hóa đơn được chọn'}
+                        className={cx('btn-create-shipping')}
+                        onClick={handleCreateShippingOrders}
+                        disabled={isLoading || selectedCount > 3}
+                        title={
+                            selectedCount > 3 ? 'Chỉ cho phép tạo đơn hàng tối đa 3 hóa đơn' : 'Tạo đơn hàng vận chuyển'
+                        }
                     >
-                        <FontAwesomeIcon icon={faTrash} />
-                        Xóa {selectedCount > 0 ? `(${selectedCount})` : ''}
+                        <FontAwesomeIcon icon={faBox} />
+                        Tạo Đơn Hàng ({selectedCount})
                     </button>
                     <button
                         className={cx('btn-cancel-selection')}
@@ -214,6 +212,7 @@ function ItemInvoice({ invoices, onDeleteSuccess, onStatusUpdate }) {
                         <th>Còn Nợ</th>
                         <th>Trạng Thái</th>
                         <th>Trạng Thái Đơn</th>
+                        <th>Đã Tạo Đơn Hàng</th>
                         <th>Ngày Tạo</th>
                         <th>Tùy Chọn</th>
                     </tr>
@@ -354,6 +353,12 @@ function ItemInvoice({ invoices, onDeleteSuccess, onStatusUpdate }) {
                                         )}
                                     </td>
                                     <td>
+                                        <span className={cx('delivery-status', { delivered: invoice.isDelivered })}>
+                                            <FontAwesomeIcon icon={invoice.isDelivered ? faCheck : faCircleXmark} />
+                                            {invoice.isDelivered ? 'Đã Tạo' : 'Chưa Tạo'}
+                                        </span>
+                                    </td>
+                                    <td>
                                         {invoice.dateCreated
                                             ? new Date(invoice.dateCreated).toLocaleDateString('vi-VN')
                                             : 'N/A'}
@@ -375,7 +380,7 @@ function ItemInvoice({ invoices, onDeleteSuccess, onStatusUpdate }) {
                                 {/* Details row */}
                                 {expandedInvoiceId === invoice.id && details.length > 0 && (
                                     <tr className={cx('detail-row')}>
-                                        <td colSpan="13">
+                                        <td colSpan="14">
                                             <div className={cx('details-container')}>
                                                 <h4>Chi Tiết Hóa Đơn</h4>
                                                 <table className={cx('details-table')}>

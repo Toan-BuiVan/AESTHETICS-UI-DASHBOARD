@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
+import axios from 'axios';
 import styles from './ItemRefund.module.scss';
 import classNames from 'classnames/bind';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCaretDown, faEdit, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faCaretDown, faEdit, faSave, faTimes, faCheck, faBan } from '@fortawesome/free-solid-svg-icons';
 
 const cx = classNames.bind(styles);
 
@@ -60,6 +61,50 @@ function ItemRefund({ refunds, onStatusUpdate }) {
         setNewStatus('');
     };
 
+    // Xử lý phê duyệt hoàn tiền
+    const handleApproveRefund = async (refund) => {
+        try {
+            const staffId = localStorage.getItem('staffId');
+            const payload = {
+                id: refund.id,
+                staffId: staffId ? parseInt(staffId) : null,
+                status: 'Approved',
+            };
+            const response = await axios.post('http://localhost:5122/api/Refund/update-status', payload);
+            if (response.data && response.data.success) {
+                alert('Phê duyệt hoàn tiền thành công');
+                onStatusUpdate(refund.id, 'Approved');
+            } else {
+                alert('Lỗi: ' + (response.data?.message || 'Phê duyệt thất bại'));
+            }
+        } catch (error) {
+            console.error('Lỗi phê duyệt hoàn tiền:', error);
+            alert('Lỗi phê duyệt hoàn tiền: ' + error.message);
+        }
+    };
+
+    // Xử lý từ chối hoàn tiền
+    const handleRejectRefund = async (refund) => {
+        try {
+            const staffId = localStorage.getItem('staffId');
+            const payload = {
+                id: refund.id,
+                staffId: staffId ? parseInt(staffId) : null,
+                status: 'Rejected',
+            };
+            const response = await axios.post('http://localhost:5122/api/Refund/update-status', payload);
+            if (response.data && response.data.success) {
+                alert('Từ chối hoàn tiền thành công');
+                onStatusUpdate(refund.id, 'Rejected');
+            } else {
+                alert('Lỗi: ' + (response.data?.message || 'Từ chối thất bại'));
+            }
+        } catch (error) {
+            console.error('Lỗi từ chối hoàn tiền:', error);
+            alert('Lỗi từ chối hoàn tiền: ' + error.message);
+        }
+    };
+
     const getStatusBadgeColor = (status) => {
         const option = refundStatusOptions.find((opt) => opt.value === status);
         return option ? option.color : '#6c757d';
@@ -94,7 +139,6 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                             />
                         </th>
                         <th>ID</th>
-                        <th>Hóa Đơn</th>
                         <th>Khách Hàng</th>
                         <th>Số Tiền</th>
                         <th>Phương Thức</th>
@@ -120,7 +164,6 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                         />
                                     </td>
                                     <td className={cx('refund-id')}>#{refund.id}</td>
-                                    <td>HĐ-{refund.invoiceId}</td>
                                     <td>{refund.customerId || 'N/A'}</td>
                                     <td className={cx('currency')}>
                                         {refund.refundAmount ? refund.refundAmount.toLocaleString('vi-VN') : '0'} ₫
@@ -184,6 +227,22 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                     </td>
                                     <td className={cx('actions')}>
                                         <button
+                                            className={cx('btn-approve')}
+                                            onClick={() => handleApproveRefund(refund)}
+                                            title="Phê duyệt"
+                                            disabled={refund.status !== 'PendingApproval'}
+                                        >
+                                            <FontAwesomeIcon icon={faCheck} />
+                                        </button>
+                                        <button
+                                            className={cx('btn-reject')}
+                                            onClick={() => handleRejectRefund(refund)}
+                                            title="Từ chối"
+                                            disabled={refund.status !== 'PendingApproval'}
+                                        >
+                                            <FontAwesomeIcon icon={faBan} />
+                                        </button>
+                                        <button
                                             className={cx('btn-expand')}
                                             onClick={() =>
                                                 setExpandedRefundId(expandedRefundId === refund.id ? null : refund.id)
@@ -197,7 +256,7 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                 {/* Details row */}
                                 {expandedRefundId === refund.id && (
                                     <tr className={cx('detail-row')}>
-                                        <td colSpan="11">
+                                        <td colSpan="10">
                                             <div className={cx('details-container')}>
                                                 <h4>Chi Tiết Hoàn Tiền</h4>
                                                 <div className={cx('details-grid')}>
@@ -266,7 +325,68 @@ function ItemRefund({ refunds, onStatusUpdate }) {
                                                     {refund.refundImages && (
                                                         <div className={cx('detail-item', 'full-width')}>
                                                             <span className={cx('label')}>Hình Ảnh:</span>
-                                                            <span className={cx('value')}>{refund.refundImages}</span>
+                                                            <div className={cx('images-container')}>
+                                                                {(() => {
+                                                                    const IMAGE_BASE_URL =
+                                                                        'http://localhost:5122/Images';
+                                                                    let imageArray = [];
+
+                                                                    console.log('refundImages:', refund.refundImages);
+
+                                                                    try {
+                                                                        // Kiểm tra xem có phải JSON array không
+                                                                        if (
+                                                                            typeof refund.refundImages === 'string' &&
+                                                                            refund.refundImages.startsWith('[')
+                                                                        ) {
+                                                                            imageArray = JSON.parse(
+                                                                                refund.refundImages,
+                                                                            );
+                                                                        } else if (
+                                                                            typeof refund.refundImages === 'string'
+                                                                        ) {
+                                                                            // Là string đơn giản, convert thành array
+                                                                            imageArray = [refund.refundImages];
+                                                                        } else if (Array.isArray(refund.refundImages)) {
+                                                                            imageArray = refund.refundImages;
+                                                                        }
+                                                                    } catch (e) {
+                                                                        console.error('Error parsing refundImages:', e);
+                                                                        imageArray = [refund.refundImages];
+                                                                    }
+
+                                                                    console.log('imageArray:', imageArray);
+
+                                                                    return imageArray
+                                                                        .filter(Boolean)
+                                                                        .map((filename, idx) => {
+                                                                            const imageSrc = `${IMAGE_BASE_URL}/${filename}`;
+                                                                            console.log('Image src:', imageSrc);
+
+                                                                            return (
+                                                                                <img
+                                                                                    key={idx}
+                                                                                    src={imageSrc}
+                                                                                    alt={`Refund image ${idx + 1}`}
+                                                                                    className={cx('refund-image')}
+                                                                                    onError={(e) => {
+                                                                                        console.error(
+                                                                                            'Failed to load image:',
+                                                                                            imageSrc,
+                                                                                        );
+                                                                                        e.target.style.display = 'none';
+                                                                                    }}
+                                                                                    onLoad={() => {
+                                                                                        console.log(
+                                                                                            'Image loaded successfully:',
+                                                                                            imageSrc,
+                                                                                        );
+                                                                                    }}
+                                                                                />
+                                                                            );
+                                                                        });
+                                                                })()}
+                                                            </div>
                                                         </div>
                                                     )}
                                                     {refund.approvedDate && (

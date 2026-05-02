@@ -9,6 +9,7 @@ import {
     faCalendarPlus,
     faCartShopping,
     faChartLine,
+    faChartBar,
     faClinicMedical,
     faComment,
     faComputer,
@@ -124,6 +125,10 @@ function Sidebar() {
                             <li>
                                 <FontAwesomeIcon icon={faChartLine} />
                                 <a href="/profile">Hồ Sơ</a>
+                            </li>
+                            <li>
+                                <FontAwesomeIcon icon={faChartBar} />
+                                <a href="/statistics">Thống Kê</a>
                             </li>
                             <li>
                                 <FontAwesomeIcon icon={faSpa} />

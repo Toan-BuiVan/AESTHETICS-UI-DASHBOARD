@@ -98,13 +98,15 @@ function Refund() {
             try {
                 setIsLoading(true);
                 const payload = {
-                    pageNo: page,
-                    pageSize: pageSize,
-                    invoiceId: filters.invoiceId ? parseInt(filters.invoiceId) : 0,
-                    customerId: filters.customerId ? parseInt(filters.customerId) : 0,
-                    staffId: filters.staffId ? parseInt(filters.staffId) : 0,
-                    startdate: filters.startDate ? new Date(filters.startDate).getTime() : 0,
-                    enddate: filters.endDate ? new Date(filters.endDate).getTime() : 0,
+                    request: {
+                        pageNo: page,
+                        pageSize: pageSize,
+                        invoiceId: filters.invoiceId ? parseInt(filters.invoiceId) : null,
+                        customerId: filters.customerId ? parseInt(filters.customerId) : null,
+                        staffId: filters.staffId ? parseInt(filters.staffId) : null,
+                        startDate: filters.startDate || null,
+                        endDate: filters.endDate || null,
+                    },
                 };
 
                 const response = await axios.post(`${API_BASE}/Refund/get-list`, payload);
@@ -162,6 +164,23 @@ function Refund() {
     // Xử lý thay đổi tìm kiếm
     const handleSearchChange = (e) => {
         const { name, value } = e.target;
+
+        // Validation: endDate phải >= startDate
+        if (name === 'startDate' || name === 'endDate') {
+            const newData = { ...searchData, [name]: value };
+
+            if (newData.startDate && newData.endDate) {
+                const startDate = new Date(newData.startDate);
+                const endDate = new Date(newData.endDate);
+
+                if (endDate < startDate) {
+                    setSuccessMessage('Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu');
+                    setShowSuccessMessage(true);
+                    return;
+                }
+            }
+        }
+
         setSearchData((prev) => ({
             ...prev,
             [name]: value,

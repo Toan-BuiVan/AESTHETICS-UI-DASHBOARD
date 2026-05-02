@@ -6,7 +6,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faPlus, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import SuccessMessage from '~/components/Layout/Defaultlayout/SuccessMessage';
 import ItemInvoice from './ItemInvoice';
-import useDebounce from '~/hooks/useDebounce';
 
 const cx = classNames.bind(styles);
 const API_BASE = 'http://localhost:5122/api';
@@ -46,7 +45,7 @@ function Invoice() {
     const [searchData, setSearchData] = useState({
         customerId: '',
         staffId: '',
-        orderStatuses: [],
+        orderStatuses: '',
         type: '',
         status: '',
         startDate: '',
@@ -106,13 +105,13 @@ function Invoice() {
                 const payload = {
                     pageNo: page,
                     pageSize: pageSize,
-                    customerId: filters.customerId ? parseInt(filters.customerId) : null,
-                    staffId: filters.staffId ? parseInt(filters.staffId) : null,
-                    orderStatuses: filters.orderStatuses || null,
+                    customerId: filters.customerId ? parseInt(filters.customerId) : 0,
+                    staffId: filters.staffId ? parseInt(filters.staffId) : 0,
+                    orderStatuses: filters.orderStatuses && filters.orderStatuses.trim() ? [filters.orderStatuses] : [],
                     type: filters.type || null,
                     status: filters.status || null,
-                    startDate: filters.startDate || null,
-                    endDate: filters.endDate || null,
+                    startDate: filters.startDate ? `${filters.startDate}T00:00:00Z` : null,
+                    endDate: filters.endDate ? `${filters.endDate}T23:59:59Z` : null,
                 };
 
                 const response = await axios.post(`${API_BASE}/Invoice/getinvoicelist`, payload);
@@ -149,14 +148,6 @@ function Invoice() {
             return () => clearTimeout(timer);
         }
     }, [showSuccessMessage]);
-
-    // Debounce search data
-    const debouncedSearchData = useDebounce(searchData, 3000);
-
-    // Call API when debounced search data changes
-    useEffect(() => {
-        fetchInvoices(1, debouncedSearchData);
-    }, [debouncedSearchData, fetchInvoices]);
 
     // Xử lý thay đổi form input
     const handleFormChange = (e) => {
@@ -196,10 +187,13 @@ function Invoice() {
     // Xử lý thay đổi tìm kiếm
     const handleSearchChange = (e) => {
         const { name, value } = e.target;
-        setSearchData((prev) => ({
-            ...prev,
+        const newSearchData = {
+            ...searchData,
             [name]: value,
-        }));
+        };
+        setSearchData(newSearchData);
+        // Gọi API ngay lập tức khi filter thay đổi (không chỉ đợi debounce)
+        fetchInvoices(1, newSearchData);
     };
 
     // Xử lý submit form
@@ -340,6 +334,21 @@ function Invoice() {
                                 {staff.fullName}
                             </option>
                         ))}
+                    </select>
+                </div>
+
+                <div className={cx('filter-group')}>
+                    <label>Trạng Thái Hóa Đơn</label>
+                    <select
+                        name="status"
+                        value={searchData.status}
+                        onChange={handleSearchChange}
+                        className={cx('filter-input')}
+                    >
+                        <option value="">Tất cả</option>
+                        <option value="DangChoXuLy">Đang Chờ Xử Lý</option>
+                        <option value="DaXuLy">Đã Xử Lý</option>
+                        <option value="DaHuy">Đã Hủy</option>
                     </select>
                 </div>
 
