@@ -32,6 +32,7 @@ import {
     faList,
     faTruck,
     faUndoAlt,
+    faChevronDown,
 } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -44,7 +45,81 @@ function Sidebar() {
     const [isLoggedInState, setIsLoggedInState] = useState(localStorage.getItem('token') !== null);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [expandedGroups, setExpandedGroups] = useState({
+        reports: true,
+        services: true,
+        finance: false,
+        management: false,
+        clinic: false,
+        booking: false,
+    });
     const navigate = useNavigate();
+
+    // Menu structure
+    const menuGroups = [
+        {
+            id: 'reports',
+            label: 'Báo Cáo',
+            icon: faChartBar,
+            items: [
+                { label: 'Hồ Sơ', href: '/profile', icon: faChartLine },
+                { label: 'Thống Kê', href: '/statistics', icon: faChartBar },
+            ],
+        },
+        {
+            id: 'services',
+            label: 'Dịch Vụ',
+            icon: faSpa,
+            items: [
+                { label: 'Dịch Vụ', href: '/services', icon: faSpa },
+                { label: 'Loại Dịch Vụ', href: '/service-type', icon: faList },
+                { label: 'Sản Phẩm', href: '/products', icon: faBox },
+                { label: 'Sản Phẩm Sử Dụng', href: '/session-product', icon: faCartShopping },
+                { label: 'Dịch Vụ Liệu Trình', href: '/treatment-plan', icon: faCalendarCheck },
+            ],
+        },
+        {
+            id: 'finance',
+            label: 'Tài Chính',
+            icon: faFileInvoiceDollar,
+            items: [
+                { label: 'Hóa Đơn', href: '/invoice', icon: faFileInvoiceDollar },
+                { label: 'Quản Lý Hoàn Tiền', href: '/refund', icon: faUndoAlt },
+                { label: 'Vouchers', href: '/vouchers', icon: faTags },
+                { label: 'Nhà Cung Cấp', href: '/supplier', icon: faTruck },
+            ],
+        },
+        {
+            id: 'management',
+            label: 'Quản Lý',
+            icon: faCog,
+            items: [
+                { label: 'Tài Khoản', href: '/account', icon: faUserTag },
+                { label: 'Nhân Viên', href: '/staff', icon: faUserTag },
+                { label: 'Ca Làm Việc', href: '/staff-shift', icon: faClock },
+                { label: 'Khách Hàng', href: '/customer', icon: faUsers },
+                { label: 'Thiết Bị', href: '/equipment', icon: faComputer },
+                { label: 'Khóa Thời Gian', href: '/appointment-time-lock', icon: faLock },
+            ],
+        },
+        {
+            id: 'clinic',
+            label: 'Phòng Khám',
+            icon: faClinicMedical,
+            items: [
+                { label: 'Quản Lý Phòng Khám', href: '/clinic', icon: faClinicMedical },
+                { label: 'Nhân Viên Phòng Khám', href: '/clinic-staff', icon: faComputer },
+            ],
+        },
+        {
+            id: 'booking',
+            label: 'Lịch Hẹn',
+            icon: faCalendarPlus,
+            items: [
+                { label: 'Quản Lý Đặt Lịch', href: '/appointments', icon: faCalendarPlus },
+            ],
+        },
+    ];
 
     // Theo dõi sự thay đổi của localStorage
     useEffect(() => {
@@ -111,6 +186,13 @@ function Sidebar() {
         }
     };
 
+    const toggleGroup = (groupId) => {
+        setExpandedGroups((prev) => ({
+            ...prev,
+            [groupId]: !prev[groupId],
+        }));
+    };
+
     return (
         <aside className={cx('wrapper')}>
             <div className={cx('sidebar-Item')}>
@@ -119,103 +201,61 @@ function Sidebar() {
                     <a>Hệ Thống</a>
                 </div>
 
-                <ul className={`${styles['sidebar-ul']} ${isOpen ? styles.show : ''}`}>
+                <nav className={`${styles['sidebar-nav']} ${isOpen ? styles.show : ''}`}>
                     {isLoggedInState ? (
                         <>
-                            <li>
-                                <FontAwesomeIcon icon={faChartLine} />
-                                <a href="/profile">Hồ Sơ</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faChartBar} />
-                                <a href="/statistics">Thống Kê</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faSpa} />
-                                <a href="/services">Dịch Vụ</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faList} />
-                                <a href="/service-type">Loại Dịch Vụ</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faFileInvoiceDollar} />
-                                <a href="/invoice">Hóa Đơn</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faUndoAlt} />
-                                <a href="/refund">Quản Lý Hoàn Tiền</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faBox} />
-                                <a href="/products">Sản Phẩm</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faCartShopping} />
-                                <a href="/session-product">Sản Phẩm Sử Dụng</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faCalendarCheck} />
-                                <a href="/treatment-plan">Dịch Vụ Liệu Trình</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faTruck} />
-                                <a href="/supplier">Nhà Cung Cấp</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faTags} />
-                                <a href="/vouchers">Vouchers</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faUserTag} />
-                                <a href="/account">Tài Khoản</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faClinicMedical} />
-                                <a href="/clinic">Quản Lý Phòng Khám</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faComputer} />
-                                <a href="/clinic-staff">Nhân Viên Phòng Khám</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faCog} />
-                                <a href="/equipment">Quản Lý Thiết Bị</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faUserTag} />
-                                <a href="/staff">Quản Lý Nhân Viên</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faClock} />
-                                <a href="/staff-shift">Ca Làm Việc</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faUsers} />
-                                <a href="/customer">Quản Lý Khách Hàng</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faLock} />
-                                <a href="/appointment-time-lock">Khóa Thời Gian</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faCalendarPlus} />
-                                <a href="/appointments">Quản Lý Đặt Lịch</a>
-                            </li>
-                            <li>
-                                <FontAwesomeIcon icon={faSignOut} />
-                                <a onClick={handleLogoutClick} style={{ cursor: 'pointer' }}>
-                                    Đăng Xuất
-                                </a>
-                            </li>
+                            {menuGroups.map((group) => (
+                                <div key={group.id} className={cx('menu-group')}>
+                                    <button
+                                        className={cx('group-header', {
+                                            expanded: expandedGroups[group.id],
+                                        })}
+                                        onClick={() => toggleGroup(group.id)}
+                                    >
+                                        <span className={cx('group-icon-label')}>
+                                            <FontAwesomeIcon icon={group.icon} />
+                                            <span>{group.label}</span>
+                                        </span>
+                                        <FontAwesomeIcon
+                                            icon={faChevronDown}
+                                            className={cx('chevron', {
+                                                rotated: expandedGroups[group.id],
+                                            })}
+                                        />
+                                    </button>
+
+                                    {expandedGroups[group.id] && (
+                                        <ul className={cx('group-items')}>
+                                            {group.items.map((item, idx) => (
+                                                <li key={idx}>
+                                                    <a href={item.href}>
+                                                        <FontAwesomeIcon icon={item.icon} />
+                                                        <span>{item.label}</span>
+                                                    </a>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            ))}
+
+                            <div className={cx('menu-group', 'logout-group')}>
+                                <button
+                                    className={cx('logout-btn')}
+                                    onClick={handleLogoutClick}
+                                >
+                                    <FontAwesomeIcon icon={faSignOut} />
+                                    <span>Đăng Xuất</span>
+                                </button>
+                            </div>
                         </>
                     ) : (
-                        <li>
+                        <a href="/" className={cx('login-btn')}>
                             <FontAwesomeIcon icon={faSignOut} />
-                            <a href="/">Đăng Nhập</a>
-                        </li>
+                            <span>Đăng Nhập</span>
+                        </a>
                     )}
-                </ul>
+                </nav>
             </div>
 
             {/* Logout Modal */}

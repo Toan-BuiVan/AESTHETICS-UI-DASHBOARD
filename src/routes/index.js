@@ -21,6 +21,7 @@ import Supplier from '~/pages/Supplier';
 import SessionProduct from '~/pages/SessionProduct';
 import TreatmentPlan from '~/pages/TreatmentPlan';
 import TreatmentSessionDetail from '~/pages/TreatmentSessionDetail';
+import Statistics from '~/pages/Statistics';
 
 const publicRoutes = [
     { path: '/products', component: Products },
@@ -31,6 +32,7 @@ const publicRoutes = [
     { path: '/invoice', component: Invoice },
     { path: '/refund', component: Refund },
     { path: '/dashBoard', component: DashBoard },
+    { path: '/statistics', component: Statistics },
     { path: '/account', component: Account },
     { path: '/clinic', component: Clinic },
     { path: '/clinic-staff', component: ClinicStaff },

@@ -272,6 +272,17 @@ function Refund() {
         }
     };
 
+    // Xử lý hiển thị thông báo
+    const handleNotify = (message) => {
+        setSuccessMessage(message);
+        setShowSuccessMessage(true);
+    };
+
+    // Xử lý refresh danh sách
+    const handleRefreshList = () => {
+        fetchRefunds(pageIndex, searchData);
+    };
+
     // Xử lý pagination
     const handlePageChange = (newPage) => {
         fetchRefunds(newPage, searchData);
@@ -279,7 +290,7 @@ function Refund() {
 
     return (
         <div className={cx('wrapper')}>
-            {showSuccessMessage && <SuccessMessage message={successMessage} />}
+            {showSuccessMessage && <SuccessMessage message={successMessage} isVisible={showSuccessMessage} />}
 
             {/* Header */}
             <div className={cx('header')}>
@@ -496,7 +507,7 @@ function Refund() {
                     <div className={cx('loading')}>Đang tải dữ liệu...</div>
                 ) : refunds.length > 0 ? (
                     <>
-                        <ItemRefund refunds={refunds} onStatusUpdate={handleStatusUpdate} />
+                        <ItemRefund refunds={refunds} onStatusUpdate={handleStatusUpdate} onNotify={handleNotify} onRefresh={handleRefreshList} />
                         {/* Pagination */}
                         <div className={cx('pagination')}>
                             {pageIndex > 1 && (

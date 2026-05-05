@@ -19,7 +19,7 @@ const refundMethodLabels = {
     KHAC: 'Khác',
 };
 
-function ItemRefund({ refunds, onStatusUpdate }) {
+function ItemRefund({ refunds, onStatusUpdate, onNotify, onRefresh }) {
     const [expandedRefundId, setExpandedRefundId] = useState(null);
     const [selectedRefundIds, setSelectedRefundIds] = useState(new Set());
     const [editingId, setEditingId] = useState(null);
@@ -53,7 +53,7 @@ function ItemRefund({ refunds, onStatusUpdate }) {
     // Xử lý lưu trạng thái
     const handleSave = (refund) => {
         if (!newStatus) {
-            alert('Vui lòng chọn trạng thái');
+            onNotify('Vui lòng chọn trạng thái');
             return;
         }
         onStatusUpdate(refund.id, newStatus);
@@ -72,14 +72,16 @@ function ItemRefund({ refunds, onStatusUpdate }) {
             };
             const response = await axios.post('http://localhost:5122/api/Refund/update-status', payload);
             if (response.data && response.data.success) {
-                alert('Phê duyệt hoàn tiền thành công');
-                onStatusUpdate(refund.id, 'Approved');
+                onNotify('Phê duyệt hoàn tiền thành công');
+                if (onRefresh) {
+                    onRefresh();
+                }
             } else {
-                alert('Lỗi: ' + (response.data?.message || 'Phê duyệt thất bại'));
+                onNotify('Lỗi: ' + (response.data?.message || 'Phê duyệt thất bại'));
             }
         } catch (error) {
             console.error('Lỗi phê duyệt hoàn tiền:', error);
-            alert('Lỗi phê duyệt hoàn tiền: ' + error.message);
+            onNotify('Lỗi phê duyệt hoàn tiền: ' + error.message);
         }
     };
 
@@ -94,14 +96,16 @@ function ItemRefund({ refunds, onStatusUpdate }) {
             };
             const response = await axios.post('http://localhost:5122/api/Refund/update-status', payload);
             if (response.data && response.data.success) {
-                alert('Từ chối hoàn tiền thành công');
-                onStatusUpdate(refund.id, 'Rejected');
+                onNotify('Từ chối hoàn tiền thành công');
+                if (onRefresh) {
+                    onRefresh();
+                }
             } else {
-                alert('Lỗi: ' + (response.data?.message || 'Từ chối thất bại'));
+                onNotify('Lỗi: ' + (response.data?.message || 'Từ chối thất bại'));
             }
         } catch (error) {
             console.error('Lỗi từ chối hoàn tiền:', error);
-            alert('Lỗi từ chối hoàn tiền: ' + error.message);
+            onNotify('Lỗi từ chối hoàn tiền: ' + error.message);
         }
     };
 

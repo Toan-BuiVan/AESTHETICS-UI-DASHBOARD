@@ -16,9 +16,11 @@ const orderStatusOptions = [
 ];
 
 const invoiceStatusOptions = [
-    { value: 'DangChoXuLy', label: 'Đang Chờ Xử Lý' },
-    { value: 'DaXuLy', label: 'Đã Xử Lý' },
-    { value: 'DaHuy', label: 'Đã Hủy' },
+    { value: 'ChuaThanhToan', label: 'Chưa Thanh Toán' },
+    { value: 'DaThanhToan', label: 'Đã Thanh Toán' },
+    { value: 'ThanhToanMotPhan', label: 'Thanh Toán Một Phần' },
+    { value: 'DaHoanTien', label: 'Đã Hoàn Tiền' },
+    { value: 'HuyHoanTien', label: 'Hủy Hoàn Tiền' },
 ];
 
 function ItemInvoice({ invoices, onDeleteSuccess, onStatusUpdate }) {
