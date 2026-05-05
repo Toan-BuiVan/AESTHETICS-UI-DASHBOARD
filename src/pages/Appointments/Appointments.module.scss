@@ -123,6 +123,7 @@
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: auto;
     animation: slideUp 0.3s ease;
 }
 
@@ -184,6 +185,8 @@
         font-weight: 600;
         color: #2c3e50;
         margin-bottom: 8px;
+        text-align: left;
+        display: block;
 
         .required {
             color: #e74c3c;

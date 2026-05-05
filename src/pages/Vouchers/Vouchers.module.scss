@@ -136,7 +136,7 @@
 .table-container {
     background: white;
     border-radius: 10px;
-    overflow: hidden;
+    overflow-x: auto;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     margin-bottom: 25px;
     border: 1px solid #f0f0f0;
@@ -313,6 +313,7 @@
     max-width: 600px;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: auto;
 }
 
 .modal-header {
@@ -361,6 +362,8 @@
         font-weight: 500;
         color: #333;
         font-size: 14px;
+        text-align: left;
+        display: block;
 
         .required {
             color: #d32f2f;

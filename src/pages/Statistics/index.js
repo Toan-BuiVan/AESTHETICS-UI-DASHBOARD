@@ -198,12 +198,12 @@ function Statistics() {
                     <p className={cx('subtitle')}>Phân tích chi tiết về kinh doanh, sản phẩm và dịch vụ</p>
                 </div>
 
-                <div className={cx('actions')}>
+                {/* <div className={cx('actions')}>
                     <button className={cx('btn-action')} onClick={handleExport}>
                         <FontAwesomeIcon icon={faDownload} />
                         <span>Xuất Báo Cáo</span>
                     </button>
-                </div>
+                </div> */}
             </div>
 
             {/* Global Filter Section */}
@@ -273,7 +273,7 @@ function Statistics() {
             {/* Charts and Tables */}
             <div className={cx('content')}>
                 {/* Revenue Chart */}
-                {monthlyStats && <RevenueChart data={monthlyStats} />}
+                <RevenueChart />
 
                 {/* Top Products Section */}
                 <div className={cx('section')}>

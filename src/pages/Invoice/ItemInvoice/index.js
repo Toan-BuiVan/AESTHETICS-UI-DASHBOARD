@@ -237,7 +237,9 @@ function ItemInvoice({ invoices, onDeleteSuccess, onStatusUpdate }) {
                                     </td>
                                     <td className={cx('invoice-id')}>{invoice.id || 'N/A'}</td>
                                     <td>{invoice.customerName || 'N/A'}</td>
-                                    <td>{invoice.staffName || 'N/A'}</td>
+                                    <td className={cx({ 'empty-staff': !invoice.staffName })}>
+                                        {invoice.staffName || 'NV'}
+                                    </td>
                                     <td className={cx('currency')}>
                                         {invoice.totalMoney ? invoice.totalMoney.toLocaleString('vi-VN') : '0'} ₫
                                     </td>

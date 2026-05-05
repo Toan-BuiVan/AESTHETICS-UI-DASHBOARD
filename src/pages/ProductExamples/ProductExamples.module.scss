@@ -169,6 +169,7 @@
     max-width: 800px;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: auto;
     display: flex;
     flex-direction: column;
 }
@@ -252,6 +253,7 @@
         color: #7f8c8d;
         text-transform: uppercase;
         margin-bottom: 6px;
+        text-align: left;
     }
 
     code {

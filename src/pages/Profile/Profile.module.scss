@@ -36,6 +36,7 @@
         color: #666;
         font-weight: 500;
         letter-spacing: 0.3px;
+        text-align: left;
     }
 }
 
@@ -405,6 +406,8 @@
         margin-bottom: 8px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        text-align: left;
+        display: block;
     }
 
     input,

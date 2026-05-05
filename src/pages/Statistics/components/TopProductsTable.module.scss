@@ -37,7 +37,7 @@
             white-space: nowrap;
 
             &.right {
-                text-align: right;
+                text-align: left;
                 padding-right: 16px;
             }
 
@@ -76,10 +76,11 @@
                     overflow: hidden;
                     text-overflow: ellipsis;
                     white-space: nowrap;
+                    text-align: left;
                 }
 
                 &.right {
-                    text-align: right;
+                    text-align: left;
                     padding-right: 16px;
                 }
 

@@ -129,6 +129,7 @@ h1 {
     max-width: 700px;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: auto;
     animation: slideUp 0.3s ease;
 }
 
@@ -203,6 +204,8 @@ h1 {
         font-weight: 600;
         color: #2c3e50;
         font-size: 13px;
+        text-align: left;
+        display: block;
 
         .required {
             color: #dc3545;
@@ -352,7 +355,7 @@ h1 {
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    overflow-x: auto;
 }
 
 .loading,

@@ -67,18 +67,6 @@ function Sidebar() {
             ],
         },
         {
-            id: 'services',
-            label: 'Dịch Vụ',
-            icon: faSpa,
-            items: [
-                { label: 'Dịch Vụ', href: '/services', icon: faSpa },
-                { label: 'Loại Dịch Vụ', href: '/service-type', icon: faList },
-                { label: 'Sản Phẩm', href: '/products', icon: faBox },
-                { label: 'Sản Phẩm Sử Dụng', href: '/session-product', icon: faCartShopping },
-                { label: 'Dịch Vụ Liệu Trình', href: '/treatment-plan', icon: faCalendarCheck },
-            ],
-        },
-        {
             id: 'finance',
             label: 'Tài Chính',
             icon: faFileInvoiceDollar,
@@ -103,6 +91,18 @@ function Sidebar() {
             ],
         },
         {
+            id: 'services',
+            label: 'Dịch Vụ',
+            icon: faSpa,
+            items: [
+                { label: 'Dịch Vụ', href: '/services', icon: faSpa },
+                { label: 'Loại Dịch Vụ', href: '/service-type', icon: faList },
+                { label: 'Sản Phẩm', href: '/products', icon: faBox },
+                { label: 'Sản Phẩm Sử Dụng', href: '/session-product', icon: faCartShopping },
+                { label: 'Dịch Vụ Liệu Trình', href: '/treatment-plan', icon: faCalendarCheck },
+            ],
+        },
+        {
             id: 'clinic',
             label: 'Phòng Khám',
             icon: faClinicMedical,
@@ -115,9 +115,7 @@ function Sidebar() {
             id: 'booking',
             label: 'Lịch Hẹn',
             icon: faCalendarPlus,
-            items: [
-                { label: 'Quản Lý Đặt Lịch', href: '/appointments', icon: faCalendarPlus },
-            ],
+            items: [{ label: 'Quản Lý Đặt Lịch', href: '/appointments', icon: faCalendarPlus }],
         },
     ];
 
@@ -240,10 +238,7 @@ function Sidebar() {
                             ))}
 
                             <div className={cx('menu-group', 'logout-group')}>
-                                <button
-                                    className={cx('logout-btn')}
-                                    onClick={handleLogoutClick}
-                                >
+                                <button className={cx('logout-btn')} onClick={handleLogoutClick}>
                                     <FontAwesomeIcon icon={faSignOut} />
                                     <span>Đăng Xuất</span>
                                 </button>
