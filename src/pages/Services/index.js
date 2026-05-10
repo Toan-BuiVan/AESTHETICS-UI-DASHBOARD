@@ -517,11 +517,13 @@ function Services() {
                             Xóa ({selectedServices.size})
                         </button>
                     )}
-                    <button 
-                        className={cx('btn-export')} 
+                    <button
+                        className={cx('btn-export')}
                         onClick={handleExportExcel}
                         disabled={selectedServices.size === 0}
-                        title={selectedServices.size === 0 ? 'Vui lòng chọn dịch vụ trước' : 'Xuất các dịch vụ được chọn'}
+                        title={
+                            selectedServices.size === 0 ? 'Vui lòng chọn dịch vụ trước' : 'Xuất các dịch vụ được chọn'
+                        }
                     >
                         <FontAwesomeIcon icon={faDownload} />
                         Xuất Excel ({selectedServices.size})

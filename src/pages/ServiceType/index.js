@@ -383,15 +383,6 @@ function ServiceType() {
                                         <button onClick={() => handleEditServiceType(serviceType)} title="Sửa">
                                             <FontAwesomeIcon icon={faEdit} />
                                         </button>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedServiceTypes(new Set([serviceType.id]));
-                                                handleDeleteMultiple();
-                                            }}
-                                            title="Xóa"
-                                        >
-                                            <FontAwesomeIcon icon={faTrash} />
-                                        </button>
                                     </td>
                                 </tr>
                             ))}

@@ -10,6 +10,103 @@ import useDebounce from '~/hooks/useDebounce';
 const cx = classNames.bind(styles);
 const API_BASE = 'http://localhost:5122/api';
 
+// Custom dropdown component
+function CustomSelect({ value, options, onChange, label, required, placeholder }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const wrapperRef = React.useRef(null);
+
+    const selectedOption = options.find((opt) => opt.id === parseInt(value));
+    const selectedLabel = selectedOption ? selectedOption.name : placeholder;
+
+    const handleSelect = (optionValue) => {
+        onChange(optionValue);
+        setIsOpen(false);
+    };
+
+    // Close dropdown when clicking outside
+    React.useEffect(() => {
+        function handleClickOutside(event) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        }
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }
+    }, [isOpen]);
+
+    return (
+        <div className={cx('custom-select-wrapper')} ref={wrapperRef}>
+            <div
+                className={cx('custom-select-trigger')}
+                onClick={() => setIsOpen(!isOpen)}
+                style={{
+                    color: '#333333',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #ddd',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none',
+                }}
+            >
+                <span
+                    style={{
+                        color: '#333333',
+                        flex: 1,
+                        margin: 0,
+                        padding: 0,
+                        background: 'transparent',
+                    }}
+                >
+                    {selectedLabel}
+                </span>
+                <span
+                    style={{
+                        color: '#999999',
+                        background: 'transparent',
+                        fontSize: '11px',
+                        marginLeft: '8px',
+                        flexShrink: 0,
+                        display: 'inline-block',
+                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease',
+                    }}
+                >
+                    ▼
+                </span>
+            </div>
+
+            {isOpen && (
+                <div className={cx('custom-select-dropdown')}>
+                    <div className={cx('custom-option', { placeholder: true })} onClick={() => handleSelect('')}>
+                        {placeholder}
+                    </div>
+                    {options.map((option) => (
+                        <div
+                            key={option.id}
+                            className={cx('custom-option', { selected: value === String(option.id) })}
+                            onClick={() => handleSelect(String(option.id))}
+                        >
+                            {option.name}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 function ClinicStaff() {
     // State quản lý danh sách nhân viên phòng khám
     const [clinicStaffs, setClinicStaffs] = useState([]);
@@ -288,7 +385,7 @@ function ClinicStaff() {
 
     const getStaffName = (staffId) => {
         const staff = staffs.find((s) => s.id === staffId);
-        return staff ? staff.staffName : 'N/A';
+        return staff ? staff.fullName : 'N/A';
     };
 
     const totalPages = Math.ceil(totalRecordCount / pageSize);
@@ -432,26 +529,26 @@ function ClinicStaff() {
                         <form className={cx('form')} onSubmit={handleSubmitForm}>
                             <div className={cx('form-group')}>
                                 <label>Phòng Khám *</label>
-                                <select name="clinicId" value={formData.clinicId} onChange={handleFormChange} required>
-                                    <option value="">-- Chọn Phòng Khám --</option>
-                                    {clinics.map((clinic) => (
-                                        <option key={clinic.id} value={clinic.id}>
-                                            {clinic.clinicName}
-                                        </option>
-                                    ))}
-                                </select>
+                                <CustomSelect
+                                    value={formData.clinicId}
+                                    options={clinics.map((c) => ({ id: c.id, name: c.clinicName }))}
+                                    onChange={(value) => setFormData({ ...formData, clinicId: value })}
+                                    label="Clinic"
+                                    placeholder="-- Chọn Phòng Khám --"
+                                    required
+                                />
                             </div>
 
                             <div className={cx('form-group')}>
                                 <label>Nhân Viên *</label>
-                                <select name="staffId" value={formData.staffId} onChange={handleFormChange} required>
-                                    <option value="">-- Chọn Nhân Viên --</option>
-                                    {staffs.map((staff) => (
-                                        <option key={staff.id} value={staff.id}>
-                                            {staff.staffName}
-                                        </option>
-                                    ))}
-                                </select>
+                                <CustomSelect
+                                    value={formData.staffId}
+                                    options={staffs.map((s) => ({ id: s.id, name: s.fullName }))}
+                                    onChange={(value) => setFormData({ ...formData, staffId: value })}
+                                    label="Staff"
+                                    placeholder="-- Chọn Nhân Viên --"
+                                    required
+                                />
                             </div>
 
                             <div className={cx('form-actions')}>

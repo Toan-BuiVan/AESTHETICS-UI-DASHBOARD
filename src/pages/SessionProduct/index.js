@@ -11,6 +11,7 @@ function SessionProduct() {
     const [totalRecordCount, setTotalRecordCount] = useState(0);
     const [pageIndex, setPageIndex] = useState(1);
     const [selectedSessionProducts, setSelectedSessionProducts] = useState(new Set());
+    const [products, setProducts] = useState([]);
     const [formData, setFormData] = useState({
         treatmentSessionId: '',
         productId: '',
@@ -31,6 +32,18 @@ function SessionProduct() {
     const successMessageRef = useRef();
 
     const debouncedSearchParams = useDebounce(searchParams, 3000);
+
+    // Lấy danh sách sản phẩm từ API
+    const fetchProducts = useCallback(async () => {
+        try {
+            const response = await axios.post(`${API_BASE}/Product/getproductlist`, {});
+            if (response.data && response.data.baseDatas) {
+                setProducts(response.data.baseDatas);
+            }
+        } catch (error) {
+            console.error('Lỗi lấy danh sách sản phẩm:', error);
+        }
+    }, []);
 
     const fetchSessionProducts = useCallback(async (page = 1, params = {}) => {
         try {
@@ -57,6 +70,17 @@ function SessionProduct() {
     useEffect(() => {
         fetchSessionProducts(1, debouncedSearchParams);
     }, [debouncedSearchParams, fetchSessionProducts]);
+
+    // Load products khi component mount và khi form mở
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
+
+    useEffect(() => {
+        if (isFormVisible) {
+            fetchProducts();
+        }
+    }, [isFormVisible, fetchProducts]);
 
     const handleSubmitForm = async (e) => {
         e.preventDefault();
@@ -335,13 +359,18 @@ function SessionProduct() {
                             </div>
                             <div className={styles['form-group']}>
                                 <label>Mã sản phẩm *</label>
-                                <input
-                                    type="number"
+                                <select
                                     value={formData.productId}
                                     onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-                                    disabled={editingId}
                                     required
-                                />
+                                >
+                                    <option value="">-- Chọn Sản Phẩm --</option>
+                                    {products.map((prod) => (
+                                        <option key={prod.id} value={prod.id}>
+                                            {prod.productName}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <div className={styles['form-group']}>
                                 <label>Mã dịch vụ *</label>

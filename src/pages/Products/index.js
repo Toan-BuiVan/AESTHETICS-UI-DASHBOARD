@@ -53,16 +53,34 @@ function Products() {
 
     // State quản lý checkbox selection
     const [selectedProducts, setSelectedProducts] = useState(new Set());
+    const [failedImages, setFailedImages] = useState(new Set());
 
     // Lấy danh sách nhà cung cấp
     const fetchSuppliers = useCallback(async () => {
         try {
-            const response = await axios.post(`${API_BASE}/Supplier/paging`, {});
-            if (response.data && response.data.baseDatas) {
-                setSuppliers(response.data.baseDatas);
+            const response = await axios.post(`${API_BASE}/Supplier/paging`, {
+                pageNo: 1,
+                pageSize: 100,
+            });
+
+            if (response.data) {
+                let supplierData = [];
+
+                // Handle different response formats
+                if (Array.isArray(response.data)) {
+                    supplierData = response.data;
+                } else if (response.data.baseDatas && Array.isArray(response.data.baseDatas)) {
+                    supplierData = response.data.baseDatas;
+                } else if (response.data.data && Array.isArray(response.data.data)) {
+                    supplierData = response.data.data;
+                }
+
+                console.log('Suppliers loaded:', supplierData);
+                setSuppliers(supplierData);
             }
         } catch (error) {
             console.error('Lỗi lấy nhà cung cấp:', error);
+            setSuppliers([]);
         }
     }, []);
 
@@ -81,6 +99,7 @@ function Products() {
                 const response = await axios.post(`${API_BASE}/Product/getproductlist`, payload);
                 if (response.data && response.data.baseDatas) {
                     setProducts(response.data.baseDatas);
+                    setFailedImages(new Set()); // Clear failed images when loading new products
                     setTotalRecordCount(response.data.totalRecordCount);
                     setPageIndex(response.data.pageIndex);
                 }
@@ -99,7 +118,7 @@ function Products() {
     useEffect(() => {
         fetchSuppliers();
         fetchProducts(1);
-    }, [fetchSuppliers, fetchProducts]);
+    }, []);
 
     // Auto-hide success message after 3 seconds
     useEffect(() => {
@@ -117,8 +136,10 @@ function Products() {
     // Call API when debounced search data changes
     useEffect(() => {
         setPageIndex(1);
-        fetchProducts(1, debouncedSearchData);
-    }, [debouncedSearchData, fetchProducts]);
+        if (Object.keys(debouncedSearchData).length > 0) {
+            fetchProducts(1, debouncedSearchData);
+        }
+    }, [debouncedSearchData]);
 
     // Xử lý thay đổi input form
     const handleFormChange = (e) => {
@@ -186,10 +207,23 @@ function Products() {
 
     // Mở form sửa sản phẩm
     const handleEditProduct = (product) => {
+        // Find supplier ID by matching supplier name
+        let supplierId = '';
+        if (product.supplierName && suppliers.length > 0) {
+            const foundSupplier = suppliers.find(
+                (sup) => sup.supplierName === product.supplierName || sup.id === product.supplierId,
+            );
+            if (foundSupplier) {
+                supplierId = String(foundSupplier.id);
+            }
+        } else if (product.supplierId) {
+            supplierId = String(product.supplierId);
+        }
+
         setIsEditMode(true);
         setEditingProductId(product.id);
         setFormData({
-            supplierId: product.supplierId || '',
+            supplierId: supplierId,
             productName: product.productName || '',
             description: product.description || '',
             sellingPrice: product.sellingPrice || '',
@@ -200,7 +234,7 @@ function Products() {
             costPrice: product.costPrice || '',
         });
         setImageFile(null);
-        setImagePreview(product.productImages ? `data:image/jpeg;base64,${product.productImages}` : '');
+        setImagePreview(product.productImages ? `http://localhost:5122/Images/${product.productImages}` : '');
         setIsFormVisible(true);
     };
 
@@ -208,7 +242,7 @@ function Products() {
     const handleSubmitForm = async (e) => {
         e.preventDefault();
 
-        if (!formData.productName || !formData.supplierId || !formData.serviceTypeId) {
+        if (!formData.productName || !formData.supplierId) {
             setSuccessMessage('Vui lòng nhập đủ thông tin bắt buộc');
             setShowSuccessMessage(true);
             return;
@@ -218,7 +252,6 @@ function Products() {
             setIsLoading(true);
             let payload = { ...formData };
             // Chuyển đổi kiểu dữ liệu
-            payload.serviceTypeId = parseInt(payload.serviceTypeId) || 0;
             payload.supplierId = parseInt(payload.supplierId) || 0;
             payload.sellingPrice = parseFloat(payload.sellingPrice) || 0;
             payload.costPrice = parseFloat(payload.costPrice) || 0;
@@ -230,7 +263,7 @@ function Products() {
                 payload.status = 'active';
                 await axios.post(`${API_BASE}/Product/updateproduct`, payload);
             } else {
-                await axios.post(`${API_BASE}/Product/addproduct`, payload);
+                await axios.post(`${API_BASE}/Product/createproduct`, payload);
             }
 
             setSuccessMessage(isEditMode ? 'Cập nhật sản phẩm thành công!' : 'Thêm sản phẩm thành công!');
@@ -421,12 +454,13 @@ function Products() {
                                         title="Chọn tất cả"
                                     />
                                 </th>
+                                <th>Hình Ảnh</th>
                                 <th>Tên Sản Phẩm</th>
                                 <th>Nhà Cung Cấp</th>
                                 <th>Giá Bán</th>
                                 <th>Số Lượng</th>
                                 <th>Đơn Vị</th>
-                                <th>Sửa</th>
+                                <th>Hành Động</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -439,16 +473,55 @@ function Products() {
                                             onChange={() => handleSelectProduct(product.id)}
                                         />
                                     </td>
-                                    <td>{product.productName}</td>
-                                    <td>{product.supplierName}</td>
-                                    <td>{Number(product.sellingPrice).toLocaleString('vi-VN')} ₫</td>
-                                    <td>{product.quantity}</td>
-                                    <td>{product.unit}</td>
+                                    <td className={cx('image-cell')}>
+                                        {product.productImages && !failedImages.has(product.id) ? (
+                                            <img
+                                                src={`http://localhost:5122/Images/${product.productImages}`}
+                                                alt={product.productName}
+                                                className={cx('product-thumbnail')}
+                                                onError={() => {
+                                                    setFailedImages((prev) => {
+                                                        const newSet = new Set(prev);
+                                                        newSet.add(product.id);
+                                                        return newSet;
+                                                    });
+                                                }}
+                                            />
+                                        ) : (
+                                            <span className={cx('no-image')}>Không có ảnh</span>
+                                        )}
+                                    </td>
+                                    <td className={cx('product-name-cell')}>
+                                        <div className={cx('product-info')}>
+                                            <strong>{product.productName}</strong>
+                                            <small className={cx('product-meta')}>
+                                                {product.description && product.description.substring(0, 50)}
+                                                {product.description && product.description.length > 50 ? '...' : ''}
+                                            </small>
+                                        </div>
+                                    </td>
+                                    <td className={cx('supplier-cell')}>{product.supplierName}</td>
+                                    <td className={cx('price-cell')}>
+                                        <span className={cx('price-highlight')}>
+                                            {Number(product.sellingPrice).toLocaleString('vi-VN')} ₫
+                                        </span>
+                                    </td>
+                                    <td className={cx('quantity-cell')}>
+                                        <span
+                                            className={cx(
+                                                'quantity-badge',
+                                                product.quantity < product.minimumStock ? 'low-stock' : 'in-stock',
+                                            )}
+                                        >
+                                            {product.quantity}
+                                        </span>
+                                    </td>
+                                    <td className={cx('unit-cell')}>{product.unit}</td>
                                     <td className={cx('action-buttons')}>
                                         <button
                                             className={cx('btn-icon-edit')}
                                             onClick={() => handleEditProduct(product)}
-                                            title="Sửa"
+                                            title="Sửa thông tin sản phẩm"
                                         >
                                             <FontAwesomeIcon icon={faEdit} />
                                         </button>
@@ -514,11 +587,15 @@ function Products() {
                                         required
                                     >
                                         <option value="">-- Chọn Nhà Cung Cấp --</option>
-                                        {suppliers.map((supplier) => (
-                                            <option key={supplier.id} value={supplier.id}>
-                                                {supplier.supplierName}
-                                            </option>
-                                        ))}
+                                        {suppliers && suppliers.length > 0 ? (
+                                            suppliers.map((supplier) => (
+                                                <option key={supplier.id} value={String(supplier.id)}>
+                                                    {supplier.supplierName}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option disabled>Không có nhà cung cấp</option>
+                                        )}
                                     </select>
                                 </div>
                             </div>

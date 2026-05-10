@@ -100,11 +100,13 @@ function Login() {
                 const userID = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/primarysid'];
                 const role = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
                 const staffId = decodedToken['StaffId'];
+                const deviceName = decodedToken['DeviceName'] || 'Unknown Device'; // Lấy DeviceName từ token
 
                 localStorage.setItem('userID', userID || '');
                 localStorage.setItem('userName', userName || '');
                 localStorage.setItem('role', role || '');
                 localStorage.setItem('staffId', staffId || '');
+                localStorage.setItem('deviceName', deviceName); // Lưu DeviceName vào localStorage
                 localStorage.setItem('isAuthenticated', 'true');
 
                 window.dispatchEvent(new Event('storageChange'));

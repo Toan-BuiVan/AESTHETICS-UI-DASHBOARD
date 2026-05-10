@@ -27,7 +27,7 @@ function TopVouchersTable({ data, isLoading }) {
                 <thead>
                     <tr>
                         <th>STT</th>
-                        <th>Mã Giảm Giá</th>
+                        <th className={cx('right')}>Mã Giảm Giá</th>
                         <th className={cx('right')}>Lần Sử Dụng</th>
                         <th className={cx('right')}>Giá Trị Giảm</th>
                         <th className={cx('right')}>Tổng Giảm Giá</th>
@@ -38,7 +38,7 @@ function TopVouchersTable({ data, isLoading }) {
                     {data.map((voucher, index) => (
                         <tr key={voucher.voucherId} className={cx('row')}>
                             <td className={cx('index')}>{index + 1}</td>
-                            <td>
+                            <td className={cx('right')}>
                                 <span className={cx('voucher-code')}>{voucher.voucherCode}</span>
                             </td>
                             <td className={cx('right')}>

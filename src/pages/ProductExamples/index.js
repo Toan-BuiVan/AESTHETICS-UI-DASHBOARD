@@ -296,7 +296,7 @@ function ProductExamples() {
                                 <h3 className={cx('section-title')}>🌐 API Endpoint</h3>
                                 <code className={cx('endpoint')}>
                                     POST http://localhost:5122/api/Product/
-                                    {selectedCase.type === 'add' ? 'addproduct' : 'updateproduct'}
+                                    {selectedCase.type === 'add' ? 'createproduct' : 'updateproduct'}
                                 </code>
                             </div>
 

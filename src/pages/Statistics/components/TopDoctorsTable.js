@@ -33,8 +33,6 @@ function TopDoctorsTable({ data, isLoading }) {
                         <th className={cx('right')}>Doanh Thu Dịch Vụ</th>
                         <th className={cx('right')}>Hoa Hồng</th>
                         <th className={cx('right')}>Thưởng</th>
-                        <th className={cx('right')}>Điểm KPI</th>
-                        <th className={cx('center')}>Đánh Giá</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -47,7 +45,7 @@ function TopDoctorsTable({ data, isLoading }) {
                                     {doctor.email && <span className={cx('email')}>{doctor.email}</span>}
                                 </div>
                             </td>
-                            <td>
+                            <td className={cx('right')}>
                                 <span className={cx('specialization')}>{doctor.specialization || 'N/A'}</span>
                             </td>
                             <td className={cx('right')}>
@@ -63,15 +61,6 @@ function TopDoctorsTable({ data, isLoading }) {
                             </td>
                             <td className={cx('right')}>
                                 <span className={cx('currency', 'bonus')}>{formatCurrency(doctor.totalBonus)}</span>
-                            </td>
-                            <td className={cx('right')}>
-                                <span className={cx('kpi-score', { active: doctor.kpiScore > 0 })}>
-                                    {doctor.kpiScore?.toFixed(2)}
-                                </span>
-                            </td>
-                            <td className={cx('center')}>
-                                <span className={cx('rating')}>{doctor.averageRating?.toFixed(1)} ⭐</span>
-                                <span className={cx('rating-count')}>({doctor.ratingCount})</span>
                             </td>
                         </tr>
                     ))}
